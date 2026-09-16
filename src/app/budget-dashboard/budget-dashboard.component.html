@@ -1,0 +1,174 @@
+<main class="dashboard-shell py-4 py-lg-5">
+  <div class="container">
+    <header class="dashboard-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-4 mb-4 mb-lg-5">
+      <div>
+        <p class="eyebrow mb-2">PERSONAL FINANCE / MONTHLY OVERVIEW</p>
+        <h1 class="display-5 fw-bold mb-2">Your money, in focus.</h1>
+        <p class="lead text-secondary mb-0">A clear view of where this month's income is going.</p>
+      </div>
+      <div class="status-pill d-inline-flex align-items-center gap-2" role="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        Dashboard active
+      </div>
+    </header>
+
+    <section class="row g-3 g-xl-4 mb-3 mb-xl-4" aria-label="Budget summary">
+      <div class="col-12 col-md-4">
+        <article class="summary-card summary-card-primary h-100">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="summary-label">Monthly income</span>
+            <span class="summary-icon" aria-hidden="true">↗</span>
+          </div>
+          <p class="summary-value mb-1">{{ selectedFile() ? (income() | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
+          <p class="summary-note mb-0">{{ selectedFile() ? 'Your planned take-home' : 'Upload a statement to begin' }}</p>
+        </article>
+      </div>
+      <div class="col-12 col-md-4">
+        <article class="summary-card h-100">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="summary-label">Tracked spending</span>
+            <span class="summary-icon summary-icon-warm" aria-hidden="true">−</span>
+          </div>
+          <p class="summary-value mb-1">{{ selectedFile() ? (trackedSpending() | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
+          <p class="summary-note mb-0">{{ selectedFile() ? 'Across ' + categories().length + ' categories' : 'Waiting for your file' }}</p>
+        </article>
+      </div>
+      <div class="col-12 col-md-4">
+        <article class="summary-card h-100">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="summary-label">Available balance</span>
+            <span class="summary-icon summary-icon-cool" aria-hidden="true">=</span>
+          </div>
+          <p class="summary-value mb-1">{{ selectedFile() ? (closingBalance() | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
+          <p class="summary-note mb-0">{{ selectedFile() ? 'Ready for your next move' : 'Calculated after upload' }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section *ngIf="categories().length > 0; else chartEmptyState" class="row g-3 g-xl-4 mb-3 mb-xl-4" aria-label="Spending graphs">
+      <div class="col-12 col-lg-7">
+        <article class="panel chart-panel h-100">
+          <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+            <div>
+              <p class="eyebrow mb-2">SPENDING MIX</p>
+              <h2 class="h3 fw-bold mb-1">Where it goes</h2>
+              <p class="text-secondary mb-0">Each bar is a precise share of total spending.</p>
+            </div>
+            <span class="chart-total">{{ trackedSpending() | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
+          </div>
+
+          <div class="bar-chart">
+            <div *ngFor="let category of categories()" class="bar-chart-row">
+              <div class="bar-chart-label d-flex justify-content-between gap-3 mb-2">
+                <span class="fw-semibold text-truncate">{{ category.name }}</span>
+                <span class="text-secondary text-nowrap">{{ spendingPercentage(category) | number:'1.1-1' }}%</span>
+              </div>
+              <div class="bar-track" role="img" [attr.aria-label]="category.name + ': ' + (spendingPercentage(category) | number:'1.1-1') + ' percent of spending'">
+                <div class="bar-fill" [style.width.%]="spendingPercentage(category)"></div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <article class="panel chart-panel h-100">
+          <p class="eyebrow mb-2">BUDGET UTILISATION</p>
+          <h2 class="h3 fw-bold mb-1">Monthly burn</h2>
+          <p class="text-secondary mb-4">Spending measured against your uploaded income.</p>
+          <div class="utilisation-graph" role="img" [attr.aria-label]="(budgetUsagePercentage() | number:'1.1-1') + ' percent of income spent'">
+            <div class="utilisation-ring" [style.--usage-angle]="budgetUsagePercentage() * 3.6 + 'deg'">
+              <div class="utilisation-ring-inner">
+                <strong>{{ budgetUsagePercentage() | number:'1.1-1' }}%</strong>
+                <span>spent</span>
+              </div>
+            </div>
+            <div class="utilisation-legend">
+              <div><span class="legend-swatch legend-swatch-spent"></span><span>Spent</span><strong>{{ trackedSpending() | currency:'INR':'symbol-narrow':'1.0-0' }}</strong></div>
+              <div><span class="legend-swatch legend-swatch-left"></span><span>Remaining</span><strong>{{ closingBalance() | currency:'INR':'symbol-narrow':'1.0-0' }}</strong></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <ng-template #chartEmptyState></ng-template>
+
+    <section *ngIf="monthlyExpenses().length > 0" class="panel monthly-panel mb-3 mb-xl-4" aria-label="Monthly expenditure">
+      <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mb-4">
+        <div>
+          <p class="eyebrow mb-2">ANNUAL STATEMENT</p>
+          <h2 class="h3 fw-bold mb-1">Monthly expenditure</h2>
+          <p class="text-secondary mb-0">A month-by-month view of recognized spending in the statement.</p>
+        </div>
+        <span class="chart-total">{{ monthlyExpenses().length }} months found</span>
+      </div>
+
+      <div class="monthly-chart">
+        <div *ngFor="let month of monthlyExpenses()" class="monthly-column">
+          <button class="monthly-bar-wrap" type="button" (click)="selectMonth(month)" [attr.aria-label]="'Open ' + month.label + ': ' + (month.total | currency:'INR':'symbol-narrow':'1.0-0') + ' debits'">
+            <span class="monthly-bar" [style.height.%]="monthlySpendingPercentage(month)"></span>
+          </button>
+          <strong>{{ month.total | currency:'INR':'symbol-narrow':'1.0-0' }}</strong>
+          <span>{{ month.label }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="row g-3 g-xl-4">
+      <div class="col-12 col-lg-5">
+        <article class="panel upload-panel h-100">
+          <div class="panel-heading mb-4">
+            <p class="eyebrow mb-2">SMART IMPORT</p>
+            <h2 class="h3 fw-bold mb-2">Bring in a statement</h2>
+            <p class="text-secondary mb-0">Upload a bank statement and let the dashboard sort the details for you.</p>
+          </div>
+
+          <label *ngIf="!selectedFile(); else selectedFileState" class="upload-zone d-flex flex-column align-items-center justify-content-center text-center" for="statement-upload">
+            <span class="upload-mark mb-3" aria-hidden="true">↑</span>
+            <span class="fw-semibold">Choose a statement</span>
+            <span class="small text-secondary mt-1">PNG, JPG, PDF, TXT or CSV · up to 10 MB</span>
+          </label>
+          <input #statementUpload id="statement-upload" class="visually-hidden" type="file" (change)="onFileUpload($event)" accept="image/png, image/jpeg, application/pdf,text/plain,text/csv,.txt,.csv">
+
+          <ng-template #selectedFileState>
+            <div class="selected-file">
+              <img *ngIf="previewUrl(); else documentPreview" class="statement-preview" [src]="previewUrl()" alt="Uploaded statement preview">
+              <ng-template #documentPreview>
+                <div class="document-preview" aria-hidden="true">PDF</div>
+              </ng-template>
+              <div class="selected-file-details">
+                <span class="eyebrow mb-1">READY TO ANALYSE</span>
+                <strong class="text-truncate" [title]="selectedFile()?.name">{{ selectedFile()?.name }}</strong>
+                <small class="text-secondary">{{ selectedFile()?.size! / 1024 / 1024 | number:'1.1-1' }} MB · {{ fileTypeLabel(selectedFile()) }}</small>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary" type="button" (click)="clearSelection(statementUpload)">Remove</button>
+            </div>
+          </ng-template>
+
+          <div *ngIf="uploadError()" class="upload-error mt-3" role="alert">
+            {{ uploadError() }}
+          </div>
+
+          <div *ngIf="uploadNotice()" class="upload-notice mt-3" role="status">
+            {{ uploadNotice() }}
+          </div>
+
+          <div *ngIf="isProcessing()" class="processing-alert d-flex align-items-center gap-3 mt-3" role="status">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span><strong>Reading your statement.</strong><br><small>We are categorising your transactions now.</small></span>
+          </div>
+        </article>
+      </div>
+
+      <div class="col-12 col-lg-7 d-flex align-items-center">
+        <div class="panel route-panel w-100">
+          <p class="eyebrow mb-2">DETAILED VIEWS</p>
+          <h2 class="h3 fw-bold mb-2">Explore your statement</h2>
+          <p class="text-secondary mb-3">Open the annual category breakdown or choose a month from the graph above.</p>
+          <button class="btn btn-success" type="button" (click)="openAnnualBreakdown()">Open annual expenses</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>

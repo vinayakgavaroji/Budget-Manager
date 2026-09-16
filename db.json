@@ -1,0 +1,42 @@
+{
+  "parse-statement": {
+    "payload": {
+      "income": 100000,
+      "categories": [
+        {
+          "id": "housing",
+          "name": "Home & utilities",
+          "items": [
+            { "id": "housing-1", "name": "Apartment rent", "amount": 28000 },
+            { "id": "housing-2", "name": "Electricity bill", "amount": 1850 },
+            { "id": "housing-3", "name": "Internet", "amount": 999 }
+          ]
+        },
+        {
+          "id": "food",
+          "name": "Food & dining",
+          "items": [
+            { "id": "food-1", "name": "Groceries", "amount": 6420 },
+            { "id": "food-2", "name": "Restaurants", "amount": 2380 }
+          ]
+        },
+        {
+          "id": "transport",
+          "name": "Transport",
+          "items": [
+            { "id": "transport-1", "name": "Fuel & metro", "amount": 3200 },
+            { "id": "transport-2", "name": "Ride sharing", "amount": 1180 }
+          ]
+        },
+        {
+          "id": "wellness",
+          "name": "Health & wellness",
+          "items": [
+            { "id": "wellness-1", "name": "Gym membership", "amount": 1500 },
+            { "id": "wellness-2", "name": "Pharmacy", "amount": 760 }
+          ]
+        }
+      ]
+    }
+  }
+}

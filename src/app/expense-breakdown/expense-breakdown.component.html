@@ -1,0 +1,87 @@
+<main class="detail-shell py-4 py-lg-5">
+  <div class="container">
+    <header class="detail-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-4 mb-4 mb-lg-5">
+      <div>
+        <p class="eyebrow mb-2">PERSONAL FINANCE / EXPENSE BREAKDOWN</p>
+        <h1 class="display-5 fw-bold mb-2">See where your money went.</h1>
+        <p class="lead text-secondary mb-0">Switch between the full year and any individual month.</p>
+      </div>
+      <button class="btn btn-outline-secondary" type="button" (click)="goToDashboard()">Dashboard</button>
+    </header>
+
+    <section class="expense-breakdown panel" aria-labelledby="expense-breakdown-title">
+      <div class="breakdown-heading">
+        <div>
+          <p class="eyebrow mb-2">{{ selectedMonth ? 'MONTHLY PULSE / ' + selectedMonth.label : 'ANNUAL PULSE' }}</p>
+          <h2 id="expense-breakdown-title" class="h3 fw-bold mb-1">{{ selectedMonth ? selectedMonth.label + ' expense breakdown' : 'Annual expense breakdown' }}</h2>
+          <p class="text-secondary mb-0">{{ selectedMonth ? 'Only expenses from this month.' : 'Your expense categories across the full statement.' }}</p>
+        </div>
+      </div>
+
+  <div class="breakdown-switcher mb-4">
+    <button class="scope-button" [class.scope-button-active]="!selectedMonth" type="button" (click)="clearMonth()">Annual</button>
+    <button *ngFor="let month of months" class="scope-button" [class.scope-button-active]="selectedMonth?.id === month.id" type="button" (click)="selectMonth(month)">{{ month.label }}</button>
+  </div>
+
+  <div *ngIf="displayedCategories().length > 0; else emptyState" class="row g-3">
+    <div *ngFor="let category of displayedCategories()" class="col-12 col-md-6">
+      <button class="breakdown-card h-100 w-100 text-start" type="button" (click)="selectCategory(category.name)" [attr.aria-label]="'Show ' + category.name + ' transactions'">
+        <div class="category-marker" aria-hidden="true"></div>
+        <div class="flex-grow-1 min-width-0">
+          <div class="d-flex justify-content-between gap-3 mb-2">
+            <h3 class="h6 fw-semibold text-truncate mb-0">{{ category.name }}</h3>
+            <span class="fw-semibold text-nowrap">{{ categoryTotal(category) | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Category spending">
+            <div class="progress-bar" [style.width.%]="(selectedMonth?.total || annualTotal) ? categoryTotal(category) / (selectedMonth?.total || annualTotal) * 100 : 0"></div>
+          </div>
+          <p class="small text-secondary mb-0 mt-2">{{ category.items.length }} transaction{{ category.items.length === 1 ? '' : 's' }}</p>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state text-center py-4">
+      <div class="empty-mark mb-3" aria-hidden="true">◌</div>
+      <h3 class="h6 fw-semibold">No expenses in this view</h3>
+      <p class="small text-secondary mb-0">Choose another month or upload a statement with transactions.</p>
+    </div>
+  </ng-template>
+
+  <section *ngIf="selectedCategoryName" class="category-detail panel mt-4" aria-live="polite">
+    <div class="detail-heading">
+      <div>
+        <p class="eyebrow mb-2">CATEGORY TRANSACTIONS</p>
+        <h2 class="h4 fw-bold mb-1">{{ selectedCategoryName }}</h2>
+        <p class="text-secondary mb-0">{{ selectedMonth ? selectedMonth.label : 'Annual view' }} · {{ selectedCategoryTransactions().length }} transactions · {{ selectedCategoryTotal() | currency:'INR':'symbol-narrow':'1.2-2' }}</p>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" type="button" (click)="closeCategory()">Close</button>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th *ngIf="!selectedMonth">Month</th>
+            <th>Date</th>
+            <th>Transaction</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of selectedCategoryTransactions()">
+            <td *ngIf="!selectedMonth" class="text-secondary text-nowrap">{{ transaction.monthLabel }}</td>
+            <td class="text-secondary text-nowrap">{{ transaction.date }}</td>
+            <td class="transaction-description">{{ transaction.description }}</td>
+            <td class="debit-amount text-end text-nowrap">-{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}</td>
+            <td class="text-secondary text-end text-nowrap">{{ transaction.closingBalance === null ? '—' : (transaction.closingBalance | currency:'INR':'symbol-narrow':'1.2-2') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+    </section>
+  </div>
+</main>

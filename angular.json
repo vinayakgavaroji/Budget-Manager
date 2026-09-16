@@ -32,17 +32,10 @@
               }
             ],
             "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.min.css",
               "src/styles.scss"
             ],
-            "scripts": [],
-            "server": "src/main.server.ts",
-            "outputMode": "server",
-            "security": {
-              "allowedHosts": []
-            },
-            "ssr": {
-              "entry": "src/server.ts"
-            }
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -106,5 +99,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "a66c436f-cd99-42f0-8208-e184e7934d90"
   }
 }

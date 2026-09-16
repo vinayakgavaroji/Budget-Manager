@@ -1,0 +1,106 @@
+<main class="detail-shell py-4 py-lg-5">
+  <div class="container">
+    <header class="detail-header d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-4 mb-4 mb-lg-5">
+      <div>
+        <p class="eyebrow mb-2">PERSONAL FINANCE / MONTHLY STATEMENT</p>
+        <h1 class="display-5 fw-bold mb-2">{{ month?.label || 'Monthly statement' }}</h1>
+        <p class="lead text-secondary mb-0">Every recognized transaction and closing balance for this month.</p>
+      </div>
+      <button class="btn btn-outline-secondary" type="button" (click)="goToDashboard()">Dashboard</button>
+    </header>
+
+    <section *ngIf="month" class="monthly-statement panel" aria-labelledby="monthly-statement-title">
+      <div class="statement-heading">
+        <div>
+          <p class="eyebrow mb-2">MONTHLY STATEMENT</p>
+          <h2 id="monthly-statement-title" class="h3 fw-bold mb-1">{{ month.label }}</h2>
+          <p class="text-secondary mb-0">Every recognized transaction for this month.</p>
+        </div>
+      </div>
+
+  <div class="statement-summary row g-3 mb-4">
+    <div class="col-12 col-md-4">
+      <div class="statement-stat">
+        <span>Debits</span>
+        <strong>{{ month.total | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="statement-stat">
+        <span>Credits</span>
+        <strong>{{ month.credits | currency:'INR':'symbol-narrow':'1.2-2' }}</strong>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="statement-stat">
+        <span>Closing balance</span>
+        <strong>{{ closingBalance() === null ? 'Not available' : (closingBalance() | currency:'INR':'symbol-narrow':'1.2-2') }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="statement-filters mb-4" aria-label="Filter monthly transactions">
+    <div class="filter-heading">
+      <span class="eyebrow">FILTER TRANSACTIONS</span>
+      <button class="btn btn-sm btn-link" type="button" (click)="resetFilters()">Reset filters</button>
+    </div>
+    <div class="row g-2">
+      <div class="col-12 col-md-3">
+        <label class="form-label" for="transaction-type">Type</label>
+        <select id="transaction-type" class="form-select form-select-sm" [value]="transactionType" (change)="updateTransactionType($event)">
+          <option value="all">All transactions</option>
+          <option value="debit">Debits only</option>
+          <option value="credit">Credits only</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="minimum-amount">Min amount</label>
+        <input id="minimum-amount" class="form-control form-control-sm" type="number" min="0" placeholder="0" [value]="minimumAmount ?? ''" (input)="updateNumberFilter('minimumAmount', $event)">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="maximum-amount">Max amount</label>
+        <input id="maximum-amount" class="form-control form-control-sm" type="number" min="0" placeholder="No limit" [value]="maximumAmount ?? ''" (input)="updateNumberFilter('maximumAmount', $event)">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label" for="minimum-balance">Min balance</label>
+        <input id="minimum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="0" [value]="minimumBalance ?? ''" (input)="updateNumberFilter('minimumBalance', $event)">
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label" for="maximum-balance">Max balance</label>
+        <input id="maximum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="No limit" [value]="maximumBalance ?? ''" (input)="updateNumberFilter('maximumBalance', $event)">
+      </div>
+    </div>
+    <p class="filter-result mb-0 mt-2">Showing {{ filteredTransactions().length }} of {{ month.transactions.length }} transactions</p>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Statement detail</th>
+          <th scope="col">Category</th>
+          <th scope="col" class="text-end">Amount</th>
+          <th scope="col" class="text-end">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let transaction of filteredTransactions()">
+          <td class="text-secondary text-nowrap">{{ transaction.date }}</td>
+          <td class="transaction-description">{{ transaction.description }}</td>
+          <td><span class="category-tag">{{ transaction.category }}</span></td>
+          <td class="text-end text-nowrap" [class.credit-amount]="transaction.type === 'credit'" [class.debit-amount]="transaction.type === 'debit'">
+            {{ transaction.type === 'credit' ? '+' : '-' }}{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}
+          </td>
+          <td class="text-end text-nowrap text-secondary">
+            {{ transaction.closingBalance === null ? '—' : (transaction.closingBalance | currency:'INR':'symbol-narrow':'1.2-2') }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p *ngIf="month.transactions.length === 0" class="empty-statement mb-0">No transaction rows were recognized for this month.</p>
+    </section>
+  </div>
+</main>
