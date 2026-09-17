@@ -166,7 +166,7 @@
           <p class="eyebrow mb-2">DETAILED VIEWS</p>
           <h2 class="h3 fw-bold mb-2">Explore your statement</h2>
           <p class="text-secondary mb-3">Open the annual category breakdown or choose a month from the graph above.</p>
-          <button class="btn btn-success" type="button" (click)="openAnnualBreakdown()">Open annual expenses</button>
+          <button [disabled]="!selectedFile()" class="btn btn-success" type="button" (click)="openAnnualBreakdown()">Open annual expenses</button>
         </div>
       </div>
     </section>
