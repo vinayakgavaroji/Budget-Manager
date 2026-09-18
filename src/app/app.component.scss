@@ -1,0 +1,53 @@
+.app-header {
+  background-color: #254d3a;
+  border-color: #1f4232 !important;
+  box-shadow: 0 0.25rem 1rem rgba(37, 77, 58, 0.15);
+}
+
+.nav-brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.user-pill {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #d8ebd5;
+  color: #254d3a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.extra-small {
+  font-size: 0.725rem;
+  line-height: 1;
+}
+
+.user-email {
+  color: #bce3cd;
+  font-weight: 600;
+}
+
+.logout-btn {
+  border-radius: 10px;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+}

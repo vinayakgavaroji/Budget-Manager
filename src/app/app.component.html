@@ -1,1 +1,33 @@
-<router-outlet />
+<ng-container *ngIf="authService.isLoggedIn(); else publicShell">
+  <nav class="navbar navbar-expand-lg border-bottom sticky-top app-header">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white" routerLink="/budget-dashboard">
+        <img src="favicon.svg" alt="Budget Manager Icon" class="nav-brand-icon" width="32" height="32" />
+        <span>Budget Manager</span>
+      </a>
+
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <div class="user-pill d-none d-sm-flex align-items-center gap-2 px-3 py-1.5 rounded-pill">
+          <span class="user-avatar" aria-hidden="true">
+            {{ (authService.currentUser()?.name || 'U').charAt(0).toUpperCase() }}
+          </span>
+          <div class="d-flex flex-column text-start leading-tight">
+            <span class="fw-semibold small text-white">{{ authService.currentUser()?.name }}</span>
+            <span class="user-email extra-small">{{ authService.currentUser()?.email }}</span>
+          </div>
+        </div>
+
+        <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1.5 logout-btn" type="button" (click)="logout()">
+          <span>🚪</span>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <router-outlet />
+</ng-container>
+
+<ng-template #publicShell>
+  <router-outlet />
+</ng-template>

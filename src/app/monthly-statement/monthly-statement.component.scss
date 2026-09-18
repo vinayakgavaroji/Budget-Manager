@@ -42,6 +42,70 @@
   font-size: 1.15rem;
 }
 
+.category-pills-container {
+  background: #f7faf6;
+  border: 1px solid #e1ebe0;
+  border-radius: 0.85rem;
+  padding: 1rem;
+}
+
+.category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.category-pill {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d9e6d8;
+  border-radius: 999px;
+  color: #4a6350;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.category-pill:hover,
+.category-pill:focus-visible {
+  border-color: #254d3a;
+  color: #254d3a;
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 77, 58, 0.08);
+}
+
+.category-pill-active {
+  background: #254d3a !important;
+  border-color: #254d3a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(37, 77, 58, 0.2);
+}
+
+.category-pill-active .pill-badge {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.pill-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.pill-badge {
+  background: #eef5eb;
+  border-radius: 999px;
+  color: #254d3a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+}
+
 .statement-filters {
   background: #f7faf6;
   border: 1px solid #e1ebe0;

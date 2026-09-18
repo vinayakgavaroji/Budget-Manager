@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BudgetStateService } from '../budget-state.service';
 
 export interface ExpenseBreakdownItem {
@@ -45,7 +45,9 @@ export class ExpenseBreakdownComponent implements OnInit {
 
   selectedMonth: ExpenseBreakdownMonth | null = null;
   selectedCategoryName: string | null = null;
+  selectedCategoryFilter: string = 'all';
   private readonly budgetState = inject(BudgetStateService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   ngOnInit() {
@@ -54,11 +56,17 @@ export class ExpenseBreakdownComponent implements OnInit {
       this.months = this.budgetState.months();
       this.annualTotal = this.budgetState.totalDebits();
     }
+    const categoryParam = this.route.snapshot.queryParamMap.get('category');
+    if (categoryParam) {
+      this.selectedCategoryName = categoryParam;
+      this.selectedCategoryFilter = categoryParam;
+    }
   }
 
   reset() {
     this.selectedMonth = null;
     this.selectedCategoryName = null;
+    this.selectedCategoryFilter = 'all';
   }
 
   displayedCategories(): ExpenseBreakdownCategory[] {
@@ -76,6 +84,38 @@ export class ExpenseBreakdownComponent implements OnInit {
     return [...categoryMap.values()];
   }
 
+  availableCategoryNames(): string[] {
+    const categories = this.displayedCategories();
+    return categories.map((cat) => cat.name).sort();
+  }
+
+  filteredDisplayedCategories(): ExpenseBreakdownCategory[] {
+    const categories = this.displayedCategories();
+    if (this.selectedCategoryFilter === 'all') {
+      return categories;
+    }
+    return categories.filter((cat) => cat.name.toLowerCase() === this.selectedCategoryFilter.toLowerCase());
+  }
+
+  updateCategoryFilter(event: Event) {
+    this.selectedCategoryFilter = (event.target as HTMLSelectElement).value;
+  }
+
+  selectCategoryFilterPill(categoryName: string) {
+    this.selectedCategoryFilter = categoryName;
+  }
+
+  categoryIcon(categoryName: string): string {
+    const name = categoryName.toLowerCase();
+    if (name.includes('home') || name.includes('utility') || name.includes('utilities')) return '🏠';
+    if (name.includes('food') || name.includes('dining')) return '🍔';
+    if (name.includes('transport') || name.includes('travel')) return '🚗';
+    if (name.includes('shop') || name.includes('shopping')) return '🛍️';
+    if (name.includes('health') || name.includes('wellness') || name.includes('medical')) return '🏥';
+    if (name.includes('invest') || name.includes('transfer')) return '📈';
+    return '📦';
+  }
+
   categoryTotal(category: ExpenseBreakdownCategory): number {
     return category.items.reduce((total, item) => total + item.amount, 0);
   }
@@ -88,6 +128,7 @@ export class ExpenseBreakdownComponent implements OnInit {
   clearMonth() {
     this.selectedMonth = null;
     this.selectedCategoryName = null;
+    this.selectedCategoryFilter = 'all';
   }
 
   selectCategory(categoryName: string) {

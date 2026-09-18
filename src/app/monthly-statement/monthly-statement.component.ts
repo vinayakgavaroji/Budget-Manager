@@ -33,6 +33,7 @@ export class MonthlyStatementComponent implements OnInit {
   @Output() closed = new EventEmitter<void>();
 
   transactionType: 'all' | 'debit' | 'credit' = 'all';
+  selectedCategory: string = 'all';
   minimumAmount: number | null = null;
   maximumAmount: number | null = null;
   minimumBalance: number | null = null;
@@ -52,9 +53,20 @@ export class MonthlyStatementComponent implements OnInit {
     return this.month?.transactions.at(-1)?.closingBalance ?? this.month?.closingBalance ?? null;
   }
 
+  availableCategories(): string[] {
+    const categoriesSet = new Set<string>();
+    for (const transaction of this.month?.transactions ?? []) {
+      if (transaction.category) {
+        categoriesSet.add(transaction.category);
+      }
+    }
+    return Array.from(categoriesSet).sort();
+  }
+
   filteredTransactions(): MonthlyStatementTransaction[] {
     return (this.month?.transactions ?? []).filter((transaction) => {
       const matchesType = this.transactionType === 'all' || transaction.type === this.transactionType;
+      const matchesCategory = this.selectedCategory === 'all' || transaction.category === this.selectedCategory;
       const matchesAmount = (this.minimumAmount === null || transaction.amount >= this.minimumAmount)
         && (this.maximumAmount === null || transaction.amount <= this.maximumAmount);
       const balance = transaction.closingBalance;
@@ -62,7 +74,7 @@ export class MonthlyStatementComponent implements OnInit {
         && (this.minimumBalance === null || balance >= this.minimumBalance)
         && (this.maximumBalance === null || balance <= this.maximumBalance);
 
-      return matchesType && matchesAmount && (this.minimumBalance === null && this.maximumBalance === null ? true : matchesBalance);
+      return matchesType && matchesCategory && matchesAmount && (this.minimumBalance === null && this.maximumBalance === null ? true : matchesBalance);
     });
   }
 
@@ -75,8 +87,28 @@ export class MonthlyStatementComponent implements OnInit {
     this.transactionType = (event.target as HTMLSelectElement).value as 'all' | 'debit' | 'credit';
   }
 
+  updateCategoryFilter(event: Event) {
+    this.selectedCategory = (event.target as HTMLSelectElement).value;
+  }
+
+  selectCategory(categoryName: string) {
+    this.selectedCategory = categoryName;
+  }
+
+  categoryIcon(categoryName: string): string {
+    const name = categoryName.toLowerCase();
+    if (name.includes('home') || name.includes('utility') || name.includes('utilities')) return '🏠';
+    if (name.includes('food') || name.includes('dining')) return '🍔';
+    if (name.includes('transport') || name.includes('travel')) return '🚗';
+    if (name.includes('shop') || name.includes('shopping')) return '🛍️';
+    if (name.includes('health') || name.includes('wellness') || name.includes('medical')) return '🏥';
+    if (name.includes('invest') || name.includes('transfer')) return '📈';
+    return '📦';
+  }
+
   resetFilters() {
     this.transactionType = 'all';
+    this.selectedCategory = 'all';
     this.minimumAmount = null;
     this.maximumAmount = null;
     this.minimumBalance = null;

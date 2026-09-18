@@ -24,6 +24,9 @@ interface ParseStatementResponse {
 
 interface ParsedStatement {
   income: number;
+  annualIncome: number;
+  monthlyIncome: number;
+  detectedSalaryDescription: string | null;
   totalDebits: number;
   closingBalance: number;
   categories: ExpenseCategory[];
@@ -59,6 +62,9 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
 
   // Reactive state using Signals
   income = signal<number>(0);
+  annualIncome = signal<number>(0);
+  monthlyIncome = signal<number>(0);
+  detectedSalaryDescription = signal<string | null>(null);
   totalDebits = signal<number>(0);
   closingBalance = signal<number>(0);
   categories = signal<ExpenseCategory[]>([]);
@@ -80,6 +86,9 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     this.selectedFile.set(this.budgetState.selectedFile());
     this.previewUrl.set(this.budgetState.previewUrl());
     this.income.set(this.budgetState.income());
+    this.annualIncome.set(this.budgetState.annualIncome());
+    this.monthlyIncome.set(this.budgetState.monthlyIncome());
+    this.detectedSalaryDescription.set(this.budgetState.detectedSalaryDescription());
     this.totalDebits.set(this.budgetState.totalDebits());
     this.closingBalance.set(this.budgetState.closingBalance());
     this.categories.set(this.budgetState.categories());
@@ -99,7 +108,7 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     this.uploadNotice.set(null);
 
     if (!this.isSupportedStatement(file)) {
-      this.uploadError.set('Please choose a PNG, JPG, PDF, TXT, or CSV statement.');
+      this.uploadError.set('Please choose an XLSX, XLS, TXT, or CSV statement.');
       input.value = '';
       return;
     }
@@ -127,6 +136,9 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
   private resetStatementData() {
     this.statementRequestId += 1;
     this.income.set(0);
+    this.annualIncome.set(0);
+    this.monthlyIncome.set(0);
+    this.detectedSalaryDescription.set(null);
     this.totalDebits.set(0);
     this.closingBalance.set(0);
     this.categories.set([]);
@@ -147,8 +159,13 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
   }
 
   private isSupportedStatement(file: File): boolean {
-    const supportedTypes = ['image/png', 'image/jpeg', 'application/pdf', 'text/plain', 'text/csv', 'application/vnd.ms-excel'];
-    const supportedExtensions = ['.png', '.jpg', '.jpeg', '.pdf', '.txt', '.csv'];
+    const supportedTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/plain',
+      'text/csv'
+    ];
+    const supportedExtensions = ['.xlsx', '.xls', '.txt', '.csv'];
     const fileName = file.name.toLowerCase();
     return supportedTypes.includes(file.type) || supportedExtensions.some((extension) => fileName.endsWith(extension));
   }
@@ -159,16 +176,16 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     }
 
     const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || file.type.includes('excel') || file.type.includes('spreadsheet')) {
+      return 'Excel spreadsheet';
+    }
     if (fileName.endsWith('.csv') || file.type === 'text/csv') {
       return 'CSV statement';
     }
     if (fileName.endsWith('.txt') || file.type === 'text/plain') {
       return 'Text statement';
     }
-    if (file.type === 'application/pdf' || fileName.endsWith('.pdf')) {
-      return 'PDF document';
-    }
-    return 'Image statement';
+    return 'Document statement';
   }
 
   private revokePreviewUrl() {
@@ -184,43 +201,37 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     const requestId = ++this.statementRequestId;
 
     try {
-      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-        const parsedStatement = await this.parsePdfStatement(file);
-        if (requestId !== this.statementRequestId) {
-          return;
-        }
-
-        this.income.set(parsedStatement.income);
-        this.totalDebits.set(parsedStatement.totalDebits);
-        this.closingBalance.set(parsedStatement.closingBalance);
-        this.categories.set(parsedStatement.categories);
-        this.monthlyExpenses.set(parsedStatement.monthlyExpenses);
-        this.updateBudgetState(parsedStatement);
-        if (parsedStatement.categories.length === 0) {
-          this.uploadNotice.set('This PDF has no readable transaction text. Scanned statements need OCR before they can be categorised.');
-        }
+      let parsedStatement: ParsedStatement;
+      if (this.isExcelStatement(file)) {
+        parsedStatement = await this.parseExcelStatement(file);
       } else if (this.isTextStatement(file)) {
-        const parsedStatement = this.categorizeStatement(await file.text());
-        if (requestId !== this.statementRequestId) {
-          return;
-        }
-
-        this.income.set(parsedStatement.income);
-        this.totalDebits.set(parsedStatement.totalDebits);
-        this.closingBalance.set(parsedStatement.closingBalance);
-        this.categories.set(parsedStatement.categories);
-        this.monthlyExpenses.set(parsedStatement.monthlyExpenses);
-        this.updateBudgetState(parsedStatement);
-        if (parsedStatement.categories.length === 0) {
-          this.uploadNotice.set('No recognizable transaction rows were found in this text file. Include a description and amount on each row.');
-        }
+        parsedStatement = this.categorizeStatement(await file.text());
       } else {
-        this.uploadNotice.set('Image preview is ready. Image statements need OCR before transactions can be categorised.');
+        this.uploadError.set('Unsupported file format. Please upload an XLSX, XLS, TXT, or CSV file.');
+        return;
+      }
+
+      if (requestId !== this.statementRequestId) {
+        return;
+      }
+
+      this.income.set(parsedStatement.income);
+      this.annualIncome.set(parsedStatement.annualIncome);
+      this.monthlyIncome.set(parsedStatement.monthlyIncome);
+      this.detectedSalaryDescription.set(parsedStatement.detectedSalaryDescription);
+      this.totalDebits.set(parsedStatement.totalDebits);
+      this.closingBalance.set(parsedStatement.closingBalance);
+      this.categories.set(parsedStatement.categories);
+      this.monthlyExpenses.set(parsedStatement.monthlyExpenses);
+      this.updateBudgetState(parsedStatement);
+
+      if (parsedStatement.categories.length === 0) {
+        this.uploadNotice.set('No recognizable transaction rows were found in this statement. Include a description and amount on each row.');
       }
     } catch (error) {
       console.error('Error reading statement', error);
       if (requestId === this.statementRequestId) {
-        this.uploadError.set('This PDF could not be read. Please try a text-based PDF statement.');
+        this.uploadError.set('This statement file could not be read. Please make sure it is a valid XLSX, XLS, TXT, or CSV file.');
       }
     } finally {
       if (requestId === this.statementRequestId) {
@@ -229,50 +240,33 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     }
   }
 
+  private isExcelStatement(file: File): boolean {
+    const fileName = file.name.toLowerCase();
+    return file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      || file.type === 'application/vnd.ms-excel'
+      || fileName.endsWith('.xlsx')
+      || fileName.endsWith('.xls');
+  }
+
   private isTextStatement(file: File): boolean {
     const fileName = file.name.toLowerCase();
     return file.type === 'text/plain'
       || file.type === 'text/csv'
-      || file.type === 'application/vnd.ms-excel'
       || fileName.endsWith('.txt')
       || fileName.endsWith('.csv');
   }
 
-  private async parsePdfStatement(file: File): Promise<ParsedStatement> {
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    const pdf = await pdfjs.getDocument({
-      data: await file.arrayBuffer(),
-      disableWorker: true,
-    } as Parameters<typeof pdfjs.getDocument>[0]).promise;
-    const pageText: string[] = [];
-
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const content = await page.getTextContent();
-      const textItems = content.items.filter(
-        (item): item is typeof item & { str: string; transform: readonly number[] } => 'str' in item && 'transform' in item,
-      );
-      const lines: Array<{ y: number; items: Array<{ x: number; text: string }> }> = [];
-
-      for (const item of textItems) {
-        const y = item.transform[5];
-        let line = lines.find((candidate) => Math.abs(candidate.y - y) <= 2);
-        if (!line) {
-          line = { y, items: [] };
-          lines.push(line);
-        }
-        line.items.push({ x: item.transform[4], text: item.str });
-      }
-
-      pageText.push(
-        lines
-          .sort((first, second) => second.y - first.y)
-          .map((line) => line.items.sort((first, second) => first.x - second.x).map((item) => item.text).join(' '))
-          .join('\n'),
-      );
+  private async parseExcelStatement(file: File): Promise<ParsedStatement> {
+    const XLSX = await import('xlsx');
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) {
+      return this.categorizeStatement('');
     }
-
-    return this.categorizeStatement(pageText.join('\n'), true);
+    const worksheet = workbook.Sheets[firstSheetName];
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    return this.categorizeStatement(csvContent);
   }
 
   private categorizeStatement(statementText: string, requireDate = false): ParsedStatement {
@@ -290,9 +284,19 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
     const amountPattern = /(?:₹|INR|Rs\.?|\$)?\s*([\d,]+(?:\.\d{1,2})?)(?![\d])/g;
     const datePattern = /\b(?:\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}[\/.-]\d{1,2}[\/.-]\d{1,2}|(?:\d{1,2}[\s-]+)?(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t|tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:[,\s-]+)(?:\d{1,2}[,\s-]+)?\d{2,4})\b/gi;
     const maximumTransactionAmount = 100_000_000;
+    const salaryKeywordPattern = /\b(?:salary|sal|payroll|stipend|wages|remuneration|direct deposit|emp deposit|salary credit)\b/i;
     const summary = statementText.match(/Opening\s+Balance\s+Debits\s+Credits\s+Closing\s+Bal\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/i);
     const statementEnd = this.extractStatementEnd(statementText);
+
+    interface SalaryEntry {
+      amount: number;
+      description: string;
+      monthId?: string;
+    }
+    const detectedSalaryEntries: SalaryEntry[] = [];
     let income = 0;
+    let totalAllCredits = 0;
+    const creditMonthsSeen = new Set<string>();
     let previousClosingBalance = summary ? this.parseAmount(summary[1]) : null;
 
     for (const line of this.buildStatementRows(statementText)) {
@@ -308,28 +312,44 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
         continue;
       }
 
-      const transactionText = line.replace(datePattern, ' ');
-      const amounts = [...transactionText.matchAll(amountPattern)]
+      const hasSalaryKeyword = salaryKeywordPattern.test(line);
+      const textWithoutDates = line.replace(datePattern, ' ');
+      const rawAmounts = [...textWithoutDates.matchAll(amountPattern)]
         .map((match) => Number(match[1].replaceAll(',', '')))
         .filter((amount) => amount > 0 && amount <= maximumTransactionAmount && Number.isSafeInteger(Math.round(amount * 100)));
-      const decimalAmounts = [...transactionText.matchAll(/(?:₹|INR|Rs\.?|\$)?\s*([\d,]+\.\d{2})/g)]
+      const decimalAmounts = [...textWithoutDates.matchAll(/(?:₹|INR|Rs\.?|\$)?\s*([\d,]+\.\d{2})/g)]
         .map((match) => Number(match[1].replaceAll(',', '')))
         .filter((amount) => amount >= 0 && amount <= maximumTransactionAmount);
       const closing = decimalAmounts.at(-1);
       const delta = closing !== undefined && previousClosingBalance !== null
         ? Math.abs(closing - previousClosingBalance)
         : undefined;
-      const amount = delta && delta <= maximumTransactionAmount ? delta : amounts.length > 0 ? Math.min(...amounts) : undefined;
-      if (!amount) {
+
+      let amount: number | undefined;
+      if (delta && delta > 0 && delta <= maximumTransactionAmount) {
+        amount = delta;
+      } else if (rawAmounts.length > 0) {
+        const filtered = closing !== undefined ? rawAmounts.filter(a => Math.abs(a - closing) > 0.01) : rawAmounts;
+        const candidates = filtered.length > 0 ? filtered : rawAmounts;
+        amount = hasSalaryKeyword ? Math.max(...candidates) : Math.min(...candidates);
+      }
+
+      if (!amount || amount <= 0) {
         continue;
       }
 
-      const isCredit = previousClosingBalance !== null && closing !== undefined
-        ? closing > previousClosingBalance
-        : /salary|income|credited|credit|deposit|interest/i.test(line);
-      const category = categories.find((candidate) => candidate.id !== 'other'
-        && candidate.keywords.some((keyword) => line.toLowerCase().includes(keyword)))
-        ?? categories.find((candidate) => candidate.id === 'other');
+      const isSalaryLine = hasSalaryKeyword || salaryKeywordPattern.test(line);
+      const isCredit = isSalaryLine
+        || (previousClosingBalance !== null && closing !== undefined && closing > previousClosingBalance)
+        || /salary|income|credited|credit|deposit|interest/i.test(line);
+
+      // Category matching: expense categories only apply to DEBIT (spending) transactions
+      const category = !isCredit
+        ? (categories.find((candidate) => candidate.id !== 'other'
+            && candidate.keywords.some((keyword) => line.toLowerCase().includes(keyword)))
+            ?? categories.find((candidate) => candidate.id === 'other'))
+        : null;
+
       if (closing !== undefined) {
         previousClosingBalance = closing;
       }
@@ -351,10 +371,10 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
           currentMonth.transactions.push({
             id: `${month.id}-${currentMonth.transactions.length + 1}`,
             date: line.match(/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}/)?.[0] ?? month.label,
-            description: transactionText.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
+            description: textWithoutDates.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
             amount,
             type: 'credit',
-            category: category?.name ?? 'Other expenses',
+            category: 'Income',
             closingBalance: closing ?? null,
           });
         }
@@ -362,6 +382,19 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
 
       if (isCredit) {
         income += amount;
+        totalAllCredits += amount;
+        if (month) {
+          creditMonthsSeen.add(month.id);
+        }
+
+        if (isSalaryLine) {
+          const descClean = textWithoutDates.replace(amountPattern, '').replace(/[\/.-]/g, ' ').replace(/\s+/g, ' ').trim();
+          detectedSalaryEntries.push({
+            amount,
+            description: descClean || 'Income Credit',
+            monthId: month?.id
+          });
+        }
       }
 
       if (!isCredit && month) {
@@ -376,10 +409,11 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
         });
       }
 
-      if (category && !isCredit) {
+      // ONLY DEBIT (SPENDING) TRANSACTIONS GO INTO EXPENSE CATEGORIES
+      if (!isCredit && category) {
         category.items.push({
           id: `${category.id}-${category.items.length + 1}`,
-          name: transactionText.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
+          name: textWithoutDates.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
           amount,
         });
 
@@ -388,7 +422,7 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
           currentMonth?.transactions.push({
             id: `${month.id}-${currentMonth.transactions.length + 1}`,
             date: line.match(/^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}/)?.[0] ?? month.label,
-            description: transactionText.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
+            description: textWithoutDates.replace(amountPattern, '').replace(/\s+/g, ' ').trim(),
             amount,
             type: 'debit',
             category: category.name,
@@ -398,8 +432,50 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
       }
     }
 
+    let finalMonthlyIncome = 0;
+    let finalAnnualIncome = 0;
+    let salaryNoticeText: string | null = null;
+
+    if (detectedSalaryEntries.length > 0) {
+      const monthSalaryMap = new Map<string, number>();
+      let totalSalarySum = 0;
+
+      for (const entry of detectedSalaryEntries) {
+        totalSalarySum += entry.amount;
+        if (entry.monthId) {
+          const current = monthSalaryMap.get(entry.monthId) ?? 0;
+          monthSalaryMap.set(entry.monthId, current + entry.amount);
+        }
+      }
+
+      const distinctMonths = monthSalaryMap.size;
+      if (distinctMonths > 0) {
+        const monthlySumList = [...monthSalaryMap.values()];
+        finalMonthlyIncome = Math.round(monthlySumList.reduce((a, b) => a + b, 0) / distinctMonths);
+      } else {
+        finalMonthlyIncome = Math.round(totalSalarySum / detectedSalaryEntries.length);
+      }
+
+      finalAnnualIncome = finalMonthlyIncome * 12;
+      const primaryEntry = detectedSalaryEntries[0];
+      salaryNoticeText = `Income detected: "${primaryEntry.description}"`;
+    } else if (totalAllCredits > 0) {
+      const distinctCreditMonths = creditMonthsSeen.size || 1;
+      finalMonthlyIncome = Math.round(totalAllCredits / distinctCreditMonths);
+      finalAnnualIncome = finalMonthlyIncome * 12;
+      salaryNoticeText = 'Calculated from credits';
+    } else if (summary && summary[3]) {
+      const summaryIncome = this.parseAmount(summary[3]);
+      finalMonthlyIncome = summaryIncome;
+      finalAnnualIncome = summaryIncome * 12;
+      salaryNoticeText = 'Calculated from statement summary';
+    }
+
     return {
-      income: summary ? this.parseAmount(summary[3]) : income,
+      income: finalMonthlyIncome,
+      annualIncome: finalAnnualIncome,
+      monthlyIncome: finalMonthlyIncome,
+      detectedSalaryDescription: salaryNoticeText,
       totalDebits: summary ? this.parseAmount(summary[2]) : categories.reduce(
         (total, category) => total + category.items.reduce((categoryTotal, item) => categoryTotal + item.amount, 0),
         0,
@@ -549,6 +625,9 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
 
   private updateBudgetState(parsedStatement: ParsedStatement) {
     this.budgetState.income.set(parsedStatement.income);
+    this.budgetState.annualIncome.set(parsedStatement.annualIncome);
+    this.budgetState.monthlyIncome.set(parsedStatement.monthlyIncome);
+    this.budgetState.detectedSalaryDescription.set(parsedStatement.detectedSalaryDescription);
     this.budgetState.totalDebits.set(parsedStatement.totalDebits);
     this.budgetState.closingBalance.set(parsedStatement.closingBalance);
     this.budgetState.categories.set(parsedStatement.categories);
@@ -621,7 +700,8 @@ export class BudgetDashboardComponent implements OnDestroy, OnInit {
   }
 
   budgetUsagePercentage(): number {
-    return this.income() > 0 ? Math.min((this.trackedSpending() / this.income()) * 100, 100) : 0;
+    const activeIncome = this.monthlyIncome() || this.income();
+    return activeIncome > 0 ? Math.min((this.trackedSpending() / activeIncome) * 100, 100) : 0;
   }
 
   monthlySpendingPercentage(month: MonthlyExpense): number {

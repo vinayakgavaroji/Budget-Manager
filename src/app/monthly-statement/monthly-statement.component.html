@@ -39,13 +39,45 @@
     </div>
   </div>
 
+  <!-- Interactive Category Pills Bar -->
+  <div class="category-pills-container mb-4" aria-label="Category quick filter">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <span class="eyebrow mb-0">CATEGORIES</span>
+      <span *ngIf="selectedCategory !== 'all'" class="small text-secondary fw-semibold">
+        Filtered by: <strong class="text-dark">{{ selectedCategory }}</strong>
+      </span>
+    </div>
+    <div class="category-pills">
+      <button
+        class="category-pill"
+        [class.category-pill-active]="selectedCategory === 'all'"
+        type="button"
+        (click)="selectCategory('all')"
+      >
+        <span class="pill-icon">✨</span>
+        <span class="pill-label">All</span>
+        <span class="pill-badge">{{ month.transactions.length }}</span>
+      </button>
+      <button
+        *ngFor="let cat of availableCategories()"
+        class="category-pill"
+        [class.category-pill-active]="selectedCategory === cat"
+        type="button"
+        (click)="selectCategory(cat)"
+      >
+        <span class="pill-icon">{{ categoryIcon(cat) }}</span>
+        <span class="pill-label">{{ cat }}</span>
+      </button>
+    </div>
+  </div>
+
   <div class="statement-filters mb-4" aria-label="Filter monthly transactions">
     <div class="filter-heading">
-      <span class="eyebrow">FILTER TRANSACTIONS</span>
+      <span class="eyebrow">ADVANCED FILTERS</span>
       <button class="btn btn-sm btn-link" type="button" (click)="resetFilters()">Reset filters</button>
     </div>
     <div class="row g-2">
-      <div class="col-12 col-md-3">
+      <div class="col-12 col-md-4">
         <label class="form-label" for="transaction-type">Type</label>
         <select id="transaction-type" class="form-select form-select-sm" [value]="transactionType" (change)="updateTransactionType($event)">
           <option value="all">All transactions</option>
@@ -65,7 +97,7 @@
         <label class="form-label" for="minimum-balance">Min balance</label>
         <input id="minimum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="0" [value]="minimumBalance ?? ''" (input)="updateNumberFilter('minimumBalance', $event)">
       </div>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-2">
         <label class="form-label" for="maximum-balance">Max balance</label>
         <input id="maximum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="No limit" [value]="maximumBalance ?? ''" (input)="updateNumberFilter('maximumBalance', $event)">
       </div>

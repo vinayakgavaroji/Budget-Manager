@@ -28,6 +28,9 @@ export interface BudgetMonth {
 @Injectable({ providedIn: 'root' })
 export class BudgetStateService {
   readonly income = signal(0);
+  readonly annualIncome = signal(0);
+  readonly monthlyIncome = signal(0);
+  readonly detectedSalaryDescription = signal<string | null>(null);
   readonly totalDebits = signal(0);
   readonly closingBalance = signal(0);
   readonly categories = signal<BudgetCategory[]>([]);
@@ -48,6 +51,9 @@ export class BudgetStateService {
 
   reset() {
     this.income.set(0);
+    this.annualIncome.set(0);
+    this.monthlyIncome.set(0);
+    this.detectedSalaryDescription.set(null);
     this.totalDebits.set(0);
     this.closingBalance.set(0);
     this.categories.set([]);
