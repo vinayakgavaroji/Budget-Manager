@@ -46,6 +46,11 @@ export class ExpenseBreakdownComponent implements OnInit {
   selectedMonth: ExpenseBreakdownMonth | null = null;
   selectedCategoryName: string | null = null;
   selectedCategoryFilter: string = 'all';
+  transactionType: 'all' | 'debit' | 'credit' = 'all';
+  minimumAmount: number | null = null;
+  maximumAmount: number | null = null;
+  minimumBalance: number | null = null;
+  maximumBalance: number | null = null;
   private readonly budgetState = inject(BudgetStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -63,19 +68,76 @@ export class ExpenseBreakdownComponent implements OnInit {
     }
   }
 
+  categoryCurrentPage = 1;
+  categoryPageSize = 10;
+  categoryPageSizeOptions: number[] = [5, 10, 20, 50, 100];
+
   reset() {
     this.selectedMonth = null;
     this.selectedCategoryName = null;
     this.selectedCategoryFilter = 'all';
+    this.transactionType = 'all';
+    this.minimumAmount = null;
+    this.maximumAmount = null;
+    this.minimumBalance = null;
+    this.maximumBalance = null;
+    this.categoryCurrentPage = 1;
+  }
+
+  updateNumberFilter(field: 'minimumAmount' | 'maximumAmount' | 'minimumBalance' | 'maximumBalance', event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this[field] = value === '' ? null : Number(value);
+    this.categoryCurrentPage = 1;
+  }
+
+  updateTransactionType(event: Event) {
+    this.transactionType = (event.target as HTMLSelectElement).value as 'all' | 'debit' | 'credit';
+    this.categoryCurrentPage = 1;
+  }
+
+  resetFilters() {
+    this.transactionType = 'all';
+    this.selectedCategoryFilter = 'all';
+    this.minimumAmount = null;
+    this.maximumAmount = null;
+    this.minimumBalance = null;
+    this.maximumBalance = null;
+    this.categoryCurrentPage = 1;
+  }
+
+  isAdvancedFiltersActive(): boolean {
+    return this.transactionType !== 'all' ||
+      this.minimumAmount !== null ||
+      this.maximumAmount !== null ||
+      this.minimumBalance !== null ||
+      this.maximumBalance !== null;
+  }
+
+  allScopedTransactions() {
+    return this.months
+      .filter((month) => !this.selectedMonth || month.id === this.selectedMonth.id)
+      .flatMap((month) => month.transactions.map((t) => ({ ...t, monthLabel: month.label })));
+  }
+
+  filteredTransactions() {
+    return this.allScopedTransactions().filter((transaction) => {
+      const matchesType = this.transactionType === 'all' || transaction.type === this.transactionType;
+      const matchesAmount = (this.minimumAmount === null || transaction.amount >= this.minimumAmount)
+        && (this.maximumAmount === null || transaction.amount <= this.maximumAmount);
+      const balance = transaction.closingBalance;
+      const matchesBalance = balance !== null
+        && (this.minimumBalance === null || balance >= this.minimumBalance)
+        && (this.maximumBalance === null || balance <= this.maximumBalance);
+
+      return matchesType && matchesAmount && (this.minimumBalance === null && this.maximumBalance === null ? true : matchesBalance);
+    });
   }
 
   displayedCategories(): ExpenseBreakdownCategory[] {
-    if (!this.selectedMonth) {
-      return this.categories;
-    }
-
+    const filtered = this.filteredTransactions();
     const categoryMap = new Map<string, ExpenseBreakdownCategory>();
-    for (const transaction of this.selectedMonth.transactions.filter((item) => item.type === 'debit')) {
+    for (const transaction of filtered) {
+      if (!transaction.category) continue;
       const id = transaction.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const category = categoryMap.get(id) ?? { id, name: transaction.category, items: [] };
       category.items.push({ id: transaction.id, name: transaction.description, amount: transaction.amount });
@@ -99,10 +161,12 @@ export class ExpenseBreakdownComponent implements OnInit {
 
   updateCategoryFilter(event: Event) {
     this.selectedCategoryFilter = (event.target as HTMLSelectElement).value;
+    this.categoryCurrentPage = 1;
   }
 
   selectCategoryFilterPill(categoryName: string) {
     this.selectedCategoryFilter = categoryName;
+    this.categoryCurrentPage = 1;
   }
 
   categoryIcon(categoryName: string): string {
@@ -122,6 +186,7 @@ export class ExpenseBreakdownComponent implements OnInit {
 
   selectMonth(month: ExpenseBreakdownMonth) {
     this.selectedMonth = month;
+    this.categoryCurrentPage = 1;
     this.monthSelected.emit(month);
   }
 
@@ -129,15 +194,18 @@ export class ExpenseBreakdownComponent implements OnInit {
     this.selectedMonth = null;
     this.selectedCategoryName = null;
     this.selectedCategoryFilter = 'all';
+    this.categoryCurrentPage = 1;
   }
 
   selectCategory(categoryName: string) {
     this.selectedCategoryName = categoryName;
+    this.categoryCurrentPage = 1;
     this.categorySelected.emit(categoryName);
   }
 
   closeCategory() {
     this.selectedCategoryName = null;
+    this.categoryCurrentPage = 1;
   }
 
   selectedCategoryTransactions() {
@@ -145,11 +213,79 @@ export class ExpenseBreakdownComponent implements OnInit {
       return [];
     }
 
-    return this.months
-      .filter((month) => !this.selectedMonth || month.id === this.selectedMonth.id)
-      .flatMap((month) => month.transactions
-        .filter((transaction) => transaction.type === 'debit' && transaction.category === this.selectedCategoryName)
-        .map((transaction) => ({ ...transaction, monthLabel: month.label })));
+    return this.filteredTransactions().filter(
+      (transaction) => transaction.category === this.selectedCategoryName
+    );
+  }
+
+  paginatedCategoryTransactions() {
+    const all = this.selectedCategoryTransactions();
+    const start = (this.categoryCurrentPage - 1) * this.categoryPageSize;
+    return all.slice(start, start + this.categoryPageSize);
+  }
+
+  categoryTotalPages(): number {
+    return Math.max(1, Math.ceil(this.selectedCategoryTransactions().length / this.categoryPageSize));
+  }
+
+  categoryStartIndex(): number {
+    const total = this.selectedCategoryTransactions().length;
+    if (total === 0) return 0;
+    return (this.categoryCurrentPage - 1) * this.categoryPageSize + 1;
+  }
+
+  categoryEndIndex(): number {
+    const total = this.selectedCategoryTransactions().length;
+    return Math.min(this.categoryCurrentPage * this.categoryPageSize, total);
+  }
+
+  goToCategoryPage(page: number) {
+    if (page >= 1 && page <= this.categoryTotalPages()) {
+      this.categoryCurrentPage = page;
+    }
+  }
+
+  nextCategoryPage() {
+    if (this.categoryCurrentPage < this.categoryTotalPages()) {
+      this.categoryCurrentPage++;
+    }
+  }
+
+  previousCategoryPage() {
+    if (this.categoryCurrentPage > 1) {
+      this.categoryCurrentPage--;
+    }
+  }
+
+  firstCategoryPage() {
+    this.categoryCurrentPage = 1;
+  }
+
+  lastCategoryPage() {
+    this.categoryCurrentPage = this.categoryTotalPages();
+  }
+
+  changeCategoryPageSize(event: Event) {
+    const size = Number((event.target as HTMLSelectElement).value);
+    this.categoryPageSize = size;
+    this.categoryCurrentPage = 1;
+  }
+
+  categoryPageNumbers(): number[] {
+    const total = this.categoryTotalPages();
+    const current = this.categoryCurrentPage;
+    const pages: number[] = [];
+
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, start + 4);
+    if (end - start < 4) {
+      start = Math.max(1, end - 4);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   selectedCategoryTotal(): number {
