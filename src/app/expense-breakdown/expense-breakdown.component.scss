@@ -128,48 +128,117 @@
   box-shadow: 0 4px 14px rgba(37, 77, 58, 0.2);
 }
 
-.breakdown-card {
-  align-items: flex-start;
-  background: #fbfdfb;
+// ── Compact Category List ──────────────────────────────
+.category-list {
   border: 1px solid #e1ebe0;
-  border-radius: 0.8rem;
-  color: inherit;
-  display: flex;
-  gap: 0.9rem;
-  padding: 1.1rem;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  border-radius: 0.85rem;
+  overflow: hidden;
 }
 
-.breakdown-card:hover,
-.breakdown-card:focus-visible {
-  border-color: #6e9f72;
-  box-shadow: 0 0.7rem 1.5rem rgba(40, 65, 47, 0.09);
-  outline: none;
-  transform: translateY(-2px);
-}
-
-.category-avatar-badge {
+.category-list-row {
   align-items: center;
-  background: #eef5eb;
-  border: 1px solid #d4e5d2;
-  border-radius: 0.75rem;
-  display: flex;
-  flex: 0 0 auto;
-  font-size: 1.25rem;
-  height: 2.6rem;
-  justify-content: center;
-  width: 2.6rem;
+  background: #fbfdfb;
+  border: none;
+  border-bottom: 1px solid #f0f5ef;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1.4rem 1.6rem 1fr minmax(6rem, 10rem) 3rem 2.5rem 5.5rem 1.2rem;
+  padding: 0.6rem 1rem;
+  text-align: left;
+  transition: background 130ms ease;
+  width: 100%;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: #f1f7f0;
+    outline: none;
+  }
+
+  &.category-list-row-active {
+    background: #e8f3e6;
+  }
 }
 
-.progress {
-  background: #edf2ec;
-  border-radius: 999px;
-  height: 0.45rem;
+.cat-rank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: right;
+  opacity: 0.55;
 }
 
-.progress-bar {
-  background: #82a77c;
+.cat-icon {
+  font-size: 1rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.cat-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #17211b;
+  min-width: 0;
+}
+
+.cat-bar-track {
+  background: #e3ede2;
   border-radius: 999px;
+  height: 0.35rem;
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  background: linear-gradient(90deg, #5a9962, #82c47c);
+  border-radius: 999px;
+  height: 100%;
+  transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cat-pct {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.cat-count {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  opacity: 0.6;
+}
+
+.cat-amount {
+  color: #254d3a;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+.cat-chevron {
+  color: #a3b5a6;
+  font-size: 1.1rem;
+  line-height: 1;
+  text-align: center;
+  transition: color 130ms ease;
+}
+
+.category-list-row:hover .cat-chevron {
+  color: #254d3a;
+}
+
+@media (max-width: 575.98px) {
+  .category-list-row {
+    grid-template-columns: 1.2rem 1.4rem 1fr 3rem 4.5rem 1rem;
+
+    .cat-bar-track,
+    .cat-count { display: none; }
+  }
 }
 
 .category-detail {
@@ -213,6 +282,61 @@
 .credit-amount {
   color: #3f7650;
   font-weight: 700;
+}
+
+.all-transactions-panel {
+  border: 1px solid #e1ebe0;
+  box-shadow: none;
+  padding: 1.25rem;
+
+  .statement-heading {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+
+    .eyebrow {
+      color: #7c8d80;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+  }
+
+  .table {
+    --bs-table-bg: transparent;
+    --bs-table-border-color: #edf1ed;
+    font-size: 0.82rem;
+  }
+
+  th {
+    color: #66806b;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.category-tag-btn {
+  background: #eef5eb;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #4d7752;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.55rem;
+  transition: all 140ms ease;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    background: #d4e5d2;
+    border-color: #254d3a;
+    color: #254d3a;
+    outline: none;
+  }
 }
 
 .pagination-bar {

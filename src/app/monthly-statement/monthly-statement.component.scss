@@ -254,3 +254,82 @@
     align-self: flex-start;
   }
 }
+
+// ── Compact Category Breakdown List ──────────────────────
+.category-list {
+  border: 1px solid #e1ebe0;
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.category-list-row {
+  align-items: center;
+  background: #fbfdfb;
+  border: none;
+  border-bottom: 1px solid #f0f5ef;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1.4rem 1.6rem 1fr minmax(6rem, 10rem) 3rem 2.5rem 5.5rem 1.2rem;
+  padding: 0.6rem 1rem;
+  text-align: left;
+  transition: background 130ms ease;
+  width: 100%;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover, &:focus-visible {
+    background: #f1f7f0;
+    outline: none;
+  }
+
+  &.category-list-row-active { background: #e8f3e6; }
+}
+
+.cat-rank { font-size: 0.7rem; font-weight: 700; text-align: right; opacity: 0.55; }
+.cat-icon { font-size: 1rem; line-height: 1; text-align: center; }
+.cat-name { font-size: 0.82rem; font-weight: 600; color: #17211b; min-width: 0; }
+
+.cat-bar-track {
+  background: #e3ede2;
+  border-radius: 999px;
+  height: 0.35rem;
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  background: linear-gradient(90deg, #5a9962, #82c47c);
+  border-radius: 999px;
+  height: 100%;
+  transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cat-pct { font-size: 0.72rem; font-weight: 600; text-align: right; }
+.cat-count { font-size: 0.7rem; font-variant-numeric: tabular-nums; text-align: right; opacity: 0.6; }
+
+.cat-amount {
+  color: #254d3a;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+.cat-chevron {
+  color: #a3b5a6;
+  font-size: 1.1rem;
+  line-height: 1;
+  text-align: center;
+  transition: color 130ms ease;
+}
+
+.category-list-row:hover .cat-chevron { color: #254d3a; }
+
+@media (max-width: 575.98px) {
+  .category-list-row {
+    grid-template-columns: 1.2rem 1.4rem 1fr 3rem 4.5rem 1rem;
+    .cat-bar-track, .cat-count { display: none; }
+  }
+}
+

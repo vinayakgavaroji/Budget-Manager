@@ -111,7 +111,37 @@ export class MonthlyStatementComponent implements OnInit {
     if (name.includes('shop') || name.includes('shopping')) return '🛍️';
     if (name.includes('health') || name.includes('wellness') || name.includes('medical')) return '🏥';
     if (name.includes('invest') || name.includes('transfer')) return '📈';
+    if (name.includes('income') || name.includes('salary') || name.includes('credit')) return '💰';
     return '📦';
+  }
+
+  categoryBreakdown(): Array<{ name: string; amount: number; count: number }> {
+    const map = new Map<string, { amount: number; count: number }>();
+    for (const t of this.filteredTransactions()) {
+      const entry = map.get(t.category) ?? { amount: 0, count: 0 };
+      entry.amount += t.amount;
+      entry.count++;
+      map.set(t.category, entry);
+    }
+    return Array.from(map.entries())
+      .map(([name, val]) => ({ name, ...val }))
+      .sort((a, b) => b.amount - a.amount);
+  }
+
+  totalFilteredAmount(): number {
+    return this.filteredTransactions().reduce((s, t) => s + t.amount, 0);
+  }
+
+  selectedCategoryBreakdown: string | null = null;
+
+  selectCategoryFromBreakdown(name: string) {
+    if (this.selectedCategory === name) {
+      this.selectCategory('all');
+      this.selectedCategoryBreakdown = null;
+    } else {
+      this.selectCategory(name);
+      this.selectedCategoryBreakdown = name;
+    }
   }
 
   resetFilters() {
