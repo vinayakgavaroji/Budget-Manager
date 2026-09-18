@@ -105,6 +105,29 @@
     <p class="filter-result mb-0 mt-2">Showing {{ filteredTransactions().length }} of {{ month.transactions.length }} transactions</p>
   </div>
 
+  <!-- Compact Category Breakdown List -->
+  <div *ngIf="categoryBreakdown().length > 0" class="category-list mb-4">
+    <button
+      *ngFor="let cat of categoryBreakdown(); let i = index"
+      class="category-list-row"
+      type="button"
+      (click)="selectCategoryFromBreakdown(cat.name)"
+      [class.category-list-row-active]="selectedCategory === cat.name"
+      [attr.aria-label]="'Filter by ' + cat.name"
+    >
+      <span class="cat-rank text-secondary">{{ i + 1 }}</span>
+      <span class="cat-icon">{{ categoryIcon(cat.name) }}</span>
+      <span class="cat-name text-truncate">{{ cat.name }}</span>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill" [style.width.%]="totalFilteredAmount() ? cat.amount / totalFilteredAmount() * 100 : 0"></div>
+      </div>
+      <span class="cat-pct text-secondary">{{ (totalFilteredAmount() ? (cat.amount / totalFilteredAmount() * 100) : 0) | number:'1.1-1' }}%</span>
+      <span class="cat-count text-secondary">{{ cat.count }}tx</span>
+      <span class="cat-amount">{{ cat.amount | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
+      <span class="cat-chevron" aria-hidden="true">›</span>
+    </button>
+  </div>
+
   <div class="table-responsive">
     <table class="table align-middle mb-0">
       <thead>

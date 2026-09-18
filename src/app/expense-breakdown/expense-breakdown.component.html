@@ -91,29 +91,26 @@
       </div>
     </div>
 
-  <div *ngIf="filteredDisplayedCategories().length > 0; else emptyState" class="row g-3">
-    <div *ngFor="let category of filteredDisplayedCategories()" class="col-12 col-md-6">
-      <button class="breakdown-card h-100 w-100 text-start" type="button" (click)="selectCategory(category.name)" [attr.aria-label]="'Show ' + category.name + ' transactions'">
-        <div class="category-avatar-badge" aria-hidden="true">
-          {{ categoryIcon(category.name) }}
-        </div>
-        <div class="flex-grow-1 min-width-0">
-          <div class="d-flex justify-content-between gap-3 mb-2">
-            <h3 class="h6 fw-semibold text-truncate mb-0">{{ category.name }}</h3>
-            <span class="fw-semibold text-nowrap text-success-emphasis">{{ categoryTotal(category) | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
-          </div>
-          <div class="progress" role="progressbar" aria-label="Category spending">
-            <div class="progress-bar" [style.width.%]="(selectedMonth?.total || annualTotal) ? categoryTotal(category) / (selectedMonth?.total || annualTotal) * 100 : 0"></div>
-          </div>
-          <div class="d-flex justify-content-between align-items-center mt-2">
-            <span class="small text-secondary mb-0">{{ category.items.length }} transaction{{ category.items.length === 1 ? '' : 's' }}</span>
-            <span class="badge rounded-pill bg-light text-dark border font-monospace small">
-              {{ ((selectedMonth?.total || annualTotal) ? (categoryTotal(category) / (selectedMonth?.total || annualTotal) * 100) : 0) | number:'1.1-1' }}%
-            </span>
-          </div>
-        </div>
-      </button>
-    </div>
+  <div *ngIf="filteredDisplayedCategories().length > 0; else emptyState" class="category-list">
+    <button
+      *ngFor="let category of filteredDisplayedCategories(); let i = index"
+      class="category-list-row"
+      type="button"
+      (click)="selectCategory(category.name)"
+      [class.category-list-row-active]="selectedCategoryName === category.name"
+      [attr.aria-label]="'Show ' + category.name + ' transactions'"
+    >
+      <span class="cat-rank text-secondary">{{ i + 1 }}</span>
+      <span class="cat-icon">{{ categoryIcon(category.name) }}</span>
+      <span class="cat-name text-truncate">{{ category.name }}</span>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill" [style.width.%]="totalFilteredAmount() ? categoryTotal(category) / totalFilteredAmount() * 100 : 0"></div>
+      </div>
+      <span class="cat-pct text-secondary">{{ (totalFilteredAmount() ? (categoryTotal(category) / totalFilteredAmount() * 100) : 0) | number:'1.1-1' }}%</span>
+      <span class="cat-count text-secondary">{{ category.items.length }}tx</span>
+      <span class="cat-amount">{{ categoryTotal(category) | currency:'INR':'symbol-narrow':'1.0-0' }}</span>
+      <span class="cat-chevron" aria-hidden="true">›</span>
+    </button>
   </div>
 
   <ng-template #emptyState>
@@ -123,6 +120,82 @@
       <p class="small text-secondary mb-0">Choose another month or upload a statement with transactions.</p>
     </div>
   </ng-template>
+
+  <!-- All Transactions Table (mirrors Monthly Statement) -->
+  <section *ngIf="filteredTransactions().length > 0" class="all-transactions-panel panel mt-4" aria-labelledby="all-tx-title">
+    <div class="statement-heading mb-3">
+      <div>
+        <p class="eyebrow mb-1">ALL TRANSACTIONS</p>
+        <h2 id="all-tx-title" class="h5 fw-bold mb-0">{{ selectedMonth ? selectedMonth.label : 'Annual view' }} — Every recognized transaction</h2>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th *ngIf="!selectedMonth" scope="col">Month</th>
+            <th scope="col">Date</th>
+            <th scope="col">Statement detail</th>
+            <th scope="col">Category</th>
+            <th scope="col" class="text-end">Amount</th>
+            <th scope="col" class="text-end">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of paginatedAllTransactions()">
+            <td *ngIf="!selectedMonth" class="text-secondary text-nowrap">{{ transaction.monthLabel }}</td>
+            <td class="text-secondary text-nowrap">{{ transaction.date }}</td>
+            <td class="transaction-description">{{ transaction.description }}</td>
+            <td>
+              <button class="category-tag category-tag-btn" type="button" (click)="selectCategoryFromTable(transaction.category)">
+                {{ transaction.category }}
+              </button>
+            </td>
+            <td class="text-end text-nowrap" [class.credit-amount]="transaction.type === 'credit'" [class.debit-amount]="transaction.type === 'debit'">
+              {{ transaction.type === 'credit' ? '+' : '-' }}{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </td>
+            <td class="text-end text-nowrap text-secondary">
+              {{ transaction.closingBalance === null ? '—' : (transaction.closingBalance | currency:'INR':'symbol-narrow':'1.2-2') }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Flat Table Pagination Bar -->
+    <div class="pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 mt-3 pt-3">
+      <div class="d-flex align-items-center gap-2 text-secondary small">
+        <span>Show</span>
+        <select class="form-select form-select-sm page-size-select" [value]="txPageSize" (change)="changeTxPageSize($event)">
+          <option *ngFor="let size of txPageSizeOptions" [value]="size">{{ size }}</option>
+        </select>
+        <span>per page</span>
+        <span class="mx-2 text-muted">|</span>
+        <span class="fw-semibold text-dark">Showing {{ txStartIndex() }}–{{ txEndIndex() }} of {{ filteredTransactions().length }}</span>
+      </div>
+
+      <nav aria-label="All transactions pagination" *ngIf="txTotalPages() > 1">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="txCurrentPage === 1">
+            <button class="page-link" type="button" (click)="firstTxPage()" [disabled]="txCurrentPage === 1" aria-label="First page">⏮</button>
+          </li>
+          <li class="page-item" [class.disabled]="txCurrentPage === 1">
+            <button class="page-link" type="button" (click)="previousTxPage()" [disabled]="txCurrentPage === 1" aria-label="Previous page">◀</button>
+          </li>
+          <li *ngFor="let page of txPageNumbers()" class="page-item" [class.active]="txCurrentPage === page">
+            <button class="page-link" type="button" (click)="goToTxPage(page)">{{ page }}</button>
+          </li>
+          <li class="page-item" [class.disabled]="txCurrentPage === txTotalPages()">
+            <button class="page-link" type="button" (click)="nextTxPage()" [disabled]="txCurrentPage === txTotalPages()" aria-label="Next page">▶</button>
+          </li>
+          <li class="page-item" [class.disabled]="txCurrentPage === txTotalPages()">
+            <button class="page-link" type="button" (click)="lastTxPage()" [disabled]="txCurrentPage === txTotalPages()" aria-label="Last page">⏭</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </section>
 
   <section *ngIf="selectedCategoryName" class="category-detail panel mt-4" aria-live="polite">
     <div class="detail-heading">
