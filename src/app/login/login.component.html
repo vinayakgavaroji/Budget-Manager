@@ -1,0 +1,224 @@
+<main class="login-shell">
+  <div class="login-container">
+    <header class="text-center mb-3">
+      <img src="favicon.svg" alt="Budget Manager Icon" class="brand-mark mb-2" width="46" height="46" />
+      <p class="eyebrow mb-1">PERSONAL FINANCE / AUTHENTICATION</p>
+      <h1 class="h3 fw-bold mb-1">Welcome to Budget Manager</h1>
+      <p class="small text-secondary mb-0">Sign in or create an account to manage your monthly finances.</p>
+    </header>
+
+    <div class="login-panel panel w-100">
+      <!-- Auth Mode Tabs -->
+      <div class="auth-tabs d-flex border-bottom mb-3">
+        <button
+          class="auth-tab btn border-0 py-1.5 flex-fill fw-bold"
+          [class.auth-tab-active]="authMode() === 'signin'"
+          (click)="setMode('signin')"
+          type="button"
+        >
+          Sign In
+        </button>
+        <button
+          class="auth-tab btn border-0 py-1.5 flex-fill fw-bold"
+          [class.auth-tab-active]="authMode() === 'signup'"
+          (click)="setMode('signup')"
+          type="button"
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <p class="eyebrow mb-0">SECURE ACCESS</p>
+          <h2 class="h5 fw-bold mb-0">{{ authMode() === 'signin' ? 'Sign in to your account' : 'Create a new account' }}</h2>
+        </div>
+        <div class="status-pill d-inline-flex align-items-center gap-1.5" role="status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Auth ready</span>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage()" class="upload-error mb-3" role="alert">
+        <strong>Error:</strong> {{ errorMessage() }}
+      </div>
+
+      <div *ngIf="successMessage()" class="upload-notice mb-3" role="status">
+        {{ successMessage() }}
+      </div>
+
+      <!-- Sign In Form -->
+      <form *ngIf="authMode() === 'signin'" (ngSubmit)="onSubmitSignIn()" #signInForm="ngForm" novalidate>
+        <div class="mb-2.5">
+          <label for="signin-email" class="form-label fw-semibold extra-small text-secondary mb-1">EMAIL ADDRESS</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">✉</span>
+            <input
+              id="signin-email"
+              type="email"
+              class="form-control border-start-0"
+              placeholder="jack.sparrow@potc.com"
+              [(ngModel)]="email"
+              name="email"
+              required
+              autocomplete="email"
+              [disabled]="isLoading()"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="signin-password" class="form-label fw-semibold extra-small text-secondary mb-1">PASSWORD</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">🔒</span>
+            <input
+              id="signin-password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control border-start-0 border-end-0"
+              placeholder="••••••••"
+              [(ngModel)]="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              [disabled]="isLoading()"
+            />
+            <button
+              class="btn btn-outline-secondary border-start-0 bg-white"
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? '🙈' : '👁️' }}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-app-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+          [disabled]="isLoading()"
+        >
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          <span>{{ isLoading() ? 'Signing in...' : 'Sign In to Dashboard' }}</span>
+        </button>
+
+        <p class="text-center extra-small text-secondary mt-2.5 mb-0">
+          Don't have an account? <button type="button" class="btn btn-link p-0 extra-small fw-bold text-decoration-none switch-link" (click)="setMode('signup')">Sign Up</button>
+        </p>
+      </form>
+
+      <!-- Sign Up Form -->
+      <form *ngIf="authMode() === 'signup'" (ngSubmit)="onSubmitSignUp()" #signUpForm="ngForm" novalidate>
+        <div class="mb-2">
+          <label for="signup-name" class="form-label fw-semibold extra-small text-secondary mb-1">FULL NAME</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">👤</span>
+            <input
+              id="signup-name"
+              type="text"
+              class="form-control border-start-0"
+              placeholder="e.g. Vinayak Gavaroji"
+              [(ngModel)]="signUpName"
+              name="signUpName"
+              required
+              autocomplete="name"
+              [disabled]="isLoading()"
+            />
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label for="signup-email" class="form-label fw-semibold extra-small text-secondary mb-1">EMAIL ADDRESS</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">✉</span>
+            <input
+              id="signup-email"
+              type="email"
+              class="form-control border-start-0"
+              placeholder="name@example.com"
+              [(ngModel)]="signUpEmail"
+              name="signUpEmail"
+              required
+              autocomplete="email"
+              [disabled]="isLoading()"
+            />
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label for="signup-password" class="form-label fw-semibold extra-small text-secondary mb-1">PASSWORD</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">🔒</span>
+            <input
+              id="signup-password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control border-start-0 border-end-0"
+              placeholder="At least 4 characters"
+              [(ngModel)]="signUpPassword"
+              name="signUpPassword"
+              required
+              autocomplete="new-password"
+              [disabled]="isLoading()"
+            />
+            <button
+              class="btn btn-outline-secondary border-start-0 bg-white"
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? '🙈' : '👁️' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="signup-confirm-password" class="form-label fw-semibold extra-small text-secondary mb-1">CONFIRM PASSWORD</label>
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">🔒</span>
+            <input
+              id="signup-confirm-password"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control border-start-0"
+              placeholder="Re-enter password"
+              [(ngModel)]="signUpConfirmPassword"
+              name="signUpConfirmPassword"
+              required
+              autocomplete="new-password"
+              [disabled]="isLoading()"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-app-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
+          [disabled]="isLoading()"
+        >
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          <span>{{ isLoading() ? 'Creating account...' : 'Create Account & Sign In' }}</span>
+        </button>
+
+        <p class="text-center extra-small text-secondary mt-2.5 mb-0">
+          Already have an account? <button type="button" class="btn btn-link p-0 extra-small fw-bold text-decoration-none switch-link" (click)="setMode('signin')">Sign In</button>
+        </p>
+      </form>
+
+      <div class="divider text-center my-2.5">
+        <span class="divider-text text-secondary extra-small px-3">OR</span>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-app-secondary w-100 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-2"
+        (click)="onDemoLogin()"
+        [disabled]="isLoading()"
+      >
+        <span class="demo-icon">⚡</span> Quick Demo Login
+      </button>
+    </div>
+
+    <p class="text-center extra-small text-secondary mt-2.5 mb-0">
+      Protected by client-side session security · Budget Manager
+    </p>
+  </div>
+</main>

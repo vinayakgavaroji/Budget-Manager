@@ -13,17 +13,33 @@
     </header>
 
     <section class="row g-3 g-xl-4 mb-3 mb-xl-4" aria-label="Budget summary">
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-sm-6 col-lg-3">
         <article class="summary-card summary-card-primary h-100">
           <div class="d-flex justify-content-between align-items-start">
             <span class="summary-label">Monthly income</span>
             <span class="summary-icon" aria-hidden="true">↗</span>
           </div>
-          <p class="summary-value mb-1">{{ selectedFile() ? (income() | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
-          <p class="summary-note mb-0">{{ selectedFile() ? 'Your planned take-home' : 'Upload a statement to begin' }}</p>
+          <p class="summary-value mb-1">{{ selectedFile() ? ((monthlyIncome() || income()) | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
+          <p class="summary-note mb-0 text-truncate" [title]="detectedSalaryDescription() || 'Upload statement to calculate'">
+            {{ selectedFile() ? (detectedSalaryDescription() || 'Monthly take-home income') : 'Upload a statement to begin' }}
+          </p>
         </article>
       </div>
-      <div class="col-12 col-md-4">
+
+      <div class="col-12 col-sm-6 col-lg-3">
+        <article class="summary-card h-100">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="summary-label">Annual income</span>
+            <span class="summary-icon summary-icon-cool" aria-hidden="true">💼</span>
+          </div>
+          <p class="summary-value mb-1">{{ selectedFile() ? (annualIncome() | currency:'INR':'symbol-narrow':'1.0-0') : '—' }}</p>
+          <p class="summary-note mb-0 text-truncate" title="Calculated as 12x monthly income">
+            {{ selectedFile() ? 'Projected annual (12x monthly income)' : 'Calculated after upload' }}
+          </p>
+        </article>
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-3">
         <article class="summary-card h-100">
           <div class="d-flex justify-content-between align-items-start">
             <span class="summary-label">Tracked spending</span>
@@ -33,7 +49,8 @@
           <p class="summary-note mb-0">{{ selectedFile() ? 'Across ' + categories().length + ' categories' : 'Waiting for your file' }}</p>
         </article>
       </div>
-      <div class="col-12 col-md-4">
+
+      <div class="col-12 col-sm-6 col-lg-3">
         <article class="summary-card h-100">
           <div class="d-flex justify-content-between align-items-start">
             <span class="summary-label">Available balance</span>
@@ -127,15 +144,15 @@
           <label *ngIf="!selectedFile(); else selectedFileState" class="upload-zone d-flex flex-column align-items-center justify-content-center text-center" for="statement-upload">
             <span class="upload-mark mb-3" aria-hidden="true">↑</span>
             <span class="fw-semibold">Choose a statement</span>
-            <span class="small text-secondary mt-1">PNG, JPG, PDF, TXT or CSV · up to 10 MB</span>
+            <span class="small text-secondary mt-1">XLSX, XLS, TXT or CSV · up to 10 MB</span>
           </label>
-          <input #statementUpload id="statement-upload" class="visually-hidden" type="file" (change)="onFileUpload($event)" accept="image/png, image/jpeg, application/pdf,text/plain,text/csv,.txt,.csv">
+          <input #statementUpload id="statement-upload" class="visually-hidden" type="file" (change)="onFileUpload($event)" accept=".xlsx,.xls,.txt,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/plain,text/csv">
 
           <ng-template #selectedFileState>
             <div class="selected-file">
               <img *ngIf="previewUrl(); else documentPreview" class="statement-preview" [src]="previewUrl()" alt="Uploaded statement preview">
               <ng-template #documentPreview>
-                <div class="document-preview" aria-hidden="true">PDF</div>
+                <div class="document-preview" aria-hidden="true">DOC</div>
               </ng-template>
               <div class="selected-file-details">
                 <span class="eyebrow mb-1">READY TO ANALYSE</span>

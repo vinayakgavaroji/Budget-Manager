@@ -18,24 +18,64 @@
         </div>
       </div>
 
-  <div class="breakdown-switcher mb-4">
-    <button class="scope-button" [class.scope-button-active]="!selectedMonth" type="button" (click)="clearMonth()">Annual</button>
-    <button *ngFor="let month of months" class="scope-button" [class.scope-button-active]="selectedMonth?.id === month.id" type="button" (click)="selectMonth(month)">{{ month.label }}</button>
+  <div class="mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+      <div class="breakdown-switcher">
+        <button class="scope-button" [class.scope-button-active]="!selectedMonth" type="button" (click)="clearMonth()">Annual</button>
+        <button *ngFor="let month of months" class="scope-button" [class.scope-button-active]="selectedMonth?.id === month.id" type="button" (click)="selectMonth(month)">{{ month.label }}</button>
+      </div>
+    </div>
+
+    <!-- Category Pills Quick Filter Bar -->
+    <div *ngIf="categories.length > 0" class="category-pills-container">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="eyebrow mb-0">FILTER BY CATEGORY</span>
+        <button *ngIf="selectedCategoryFilter !== 'all'" class="btn btn-sm btn-link text-decoration-none p-0 filter-reset-btn" (click)="selectCategoryFilterPill('all')">Show all</button>
+      </div>
+      <div class="category-pills">
+        <button
+          class="category-pill"
+          [class.category-pill-active]="selectedCategoryFilter === 'all'"
+          type="button"
+          (click)="selectCategoryFilterPill('all')"
+        >
+          <span class="pill-icon">✨</span>
+          <span class="pill-label">All</span>
+        </button>
+        <button
+          *ngFor="let categoryName of availableCategoryNames()"
+          class="category-pill"
+          [class.category-pill-active]="selectedCategoryFilter === categoryName"
+          type="button"
+          (click)="selectCategoryFilterPill(categoryName)"
+        >
+          <span class="pill-icon">{{ categoryIcon(categoryName) }}</span>
+          <span class="pill-label">{{ categoryName }}</span>
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div *ngIf="displayedCategories().length > 0; else emptyState" class="row g-3">
-    <div *ngFor="let category of displayedCategories()" class="col-12 col-md-6">
+  <div *ngIf="filteredDisplayedCategories().length > 0; else emptyState" class="row g-3">
+    <div *ngFor="let category of filteredDisplayedCategories()" class="col-12 col-md-6">
       <button class="breakdown-card h-100 w-100 text-start" type="button" (click)="selectCategory(category.name)" [attr.aria-label]="'Show ' + category.name + ' transactions'">
-        <div class="category-marker" aria-hidden="true"></div>
+        <div class="category-avatar-badge" aria-hidden="true">
+          {{ categoryIcon(category.name) }}
+        </div>
         <div class="flex-grow-1 min-width-0">
           <div class="d-flex justify-content-between gap-3 mb-2">
             <h3 class="h6 fw-semibold text-truncate mb-0">{{ category.name }}</h3>
-            <span class="fw-semibold text-nowrap">{{ categoryTotal(category) | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
+            <span class="fw-semibold text-nowrap text-success-emphasis">{{ categoryTotal(category) | currency:'INR':'symbol-narrow':'1.2-2' }}</span>
           </div>
           <div class="progress" role="progressbar" aria-label="Category spending">
             <div class="progress-bar" [style.width.%]="(selectedMonth?.total || annualTotal) ? categoryTotal(category) / (selectedMonth?.total || annualTotal) * 100 : 0"></div>
           </div>
-          <p class="small text-secondary mb-0 mt-2">{{ category.items.length }} transaction{{ category.items.length === 1 ? '' : 's' }}</p>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="small text-secondary mb-0">{{ category.items.length }} transaction{{ category.items.length === 1 ? '' : 's' }}</span>
+            <span class="badge rounded-pill bg-light text-dark border font-monospace small">
+              {{ ((selectedMonth?.total || annualTotal) ? (categoryTotal(category) / (selectedMonth?.total || annualTotal) * 100) : 0) | number:'1.1-1' }}%
+            </span>
+          </div>
         </div>
       </button>
     </div>
