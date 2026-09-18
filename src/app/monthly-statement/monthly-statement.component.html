@@ -117,7 +117,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let transaction of filteredTransactions()">
+        <tr *ngFor="let transaction of paginatedTransactions()">
           <td class="text-secondary text-nowrap">{{ transaction.date }}</td>
           <td class="transaction-description">{{ transaction.description }}</td>
           <td><span class="category-tag">{{ transaction.category }}</span></td>
@@ -130,6 +130,49 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- Pagination Controls Bar -->
+  <div *ngIf="filteredTransactions().length > 0" class="pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 mt-3 pt-3">
+    <div class="d-flex align-items-center gap-2 text-secondary small">
+      <span>Show</span>
+      <select class="form-select form-select-sm page-size-select" [value]="pageSize" (change)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+      </select>
+      <span>per page</span>
+      <span class="mx-2 text-muted">|</span>
+      <span class="fw-semibold text-dark">Showing {{ startIndex() }}–{{ endIndex() }} of {{ filteredTransactions().length }}</span>
+    </div>
+
+    <nav aria-label="Transaction table pagination" *ngIf="totalPages() > 1">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <button class="page-link" type="button" (click)="firstPage()" [disabled]="currentPage === 1" title="First page" aria-label="First page">
+            ⏮
+          </button>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === 1">
+          <button class="page-link" type="button" (click)="previousPage()" [disabled]="currentPage === 1" title="Previous page" aria-label="Previous page">
+            ◀
+          </button>
+        </li>
+        <li *ngFor="let page of pageNumbers()" class="page-item" [class.active]="currentPage === page">
+          <button class="page-link" type="button" (click)="goToPage(page)">
+            {{ page }}
+          </button>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages()">
+          <button class="page-link" type="button" (click)="nextPage()" [disabled]="currentPage === totalPages()" title="Next page" aria-label="Next page">
+            ▶
+          </button>
+        </li>
+        <li class="page-item" [class.disabled]="currentPage === totalPages()">
+          <button class="page-link" type="button" (click)="lastPage()" [disabled]="currentPage === totalPages()" title="Last page" aria-label="Last page">
+            ⏭
+          </button>
+        </li>
+      </ul>
+    </nav>
   </div>
 
   <p *ngIf="month.transactions.length === 0" class="empty-statement mb-0">No transaction rows were recognized for this month.</p>

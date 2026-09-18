@@ -78,21 +78,29 @@ export class MonthlyStatementComponent implements OnInit {
     });
   }
 
+  currentPage = 1;
+  pageSize = 10;
+  pageSizeOptions: number[] = [5, 10, 20, 50, 100];
+
   updateNumberFilter(field: 'minimumAmount' | 'maximumAmount' | 'minimumBalance' | 'maximumBalance', event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this[field] = value === '' ? null : Number(value);
+    this.currentPage = 1;
   }
 
   updateTransactionType(event: Event) {
     this.transactionType = (event.target as HTMLSelectElement).value as 'all' | 'debit' | 'credit';
+    this.currentPage = 1;
   }
 
   updateCategoryFilter(event: Event) {
     this.selectedCategory = (event.target as HTMLSelectElement).value;
+    this.currentPage = 1;
   }
 
   selectCategory(categoryName: string) {
     this.selectedCategory = categoryName;
+    this.currentPage = 1;
   }
 
   categoryIcon(categoryName: string): string {
@@ -113,6 +121,77 @@ export class MonthlyStatementComponent implements OnInit {
     this.maximumAmount = null;
     this.minimumBalance = null;
     this.maximumBalance = null;
+    this.currentPage = 1;
+  }
+
+  paginatedTransactions(): MonthlyStatementTransaction[] {
+    const filtered = this.filteredTransactions();
+    const start = (this.currentPage - 1) * this.pageSize;
+    return filtered.slice(start, start + this.pageSize);
+  }
+
+  totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredTransactions().length / this.pageSize));
+  }
+
+  startIndex(): number {
+    const total = this.filteredTransactions().length;
+    if (total === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  endIndex(): number {
+    const total = this.filteredTransactions().length;
+    return Math.min(this.currentPage * this.pageSize, total);
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage = page;
+    }
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages()) {
+      this.currentPage++;
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+    }
+  }
+
+  firstPage() {
+    this.currentPage = 1;
+  }
+
+  lastPage() {
+    this.currentPage = this.totalPages();
+  }
+
+  changePageSize(event: Event) {
+    const size = Number((event.target as HTMLSelectElement).value);
+    this.pageSize = size;
+    this.currentPage = 1;
+  }
+
+  pageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage;
+    const pages: number[] = [];
+
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, start + 4);
+    if (end - start < 4) {
+      start = Math.max(1, end - 4);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   goToDashboard() {

@@ -183,6 +183,67 @@
   padding-top: 1rem;
 }
 
+.pagination-bar {
+  border-top: 1px solid #edf1ed;
+
+  .page-size-select {
+    width: auto;
+    display: inline-block;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    padding-left: 0.5rem;
+    padding-right: 1.5rem;
+    border-color: #d9e6d8;
+    color: #254d3a;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:focus {
+      border-color: #254d3a;
+      box-shadow: 0 0 0 0.2rem rgba(37, 77, 58, 0.15);
+    }
+  }
+
+  .pagination {
+    gap: 0.25rem;
+
+    .page-item {
+      .page-link {
+        border-radius: 0.4rem;
+        border-color: #d9e6d8;
+        color: #254d3a;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+        transition: all 150ms ease;
+
+        &:hover:not([disabled]) {
+          background-color: #eaf3e7;
+          border-color: #254d3a;
+          color: #254d3a;
+        }
+
+        &:focus {
+          box-shadow: 0 0 0 0.2rem rgba(37, 77, 58, 0.15);
+        }
+      }
+
+      &.active .page-link {
+        background-color: #254d3a;
+        border-color: #254d3a;
+        color: #ffffff;
+      }
+
+      &.disabled .page-link {
+        color: #a3b5a6;
+        background-color: #f7faf6;
+        border-color: #e5ede4;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
 @media (max-width: 575.98px) {
   .statement-heading {
     align-items: stretch;

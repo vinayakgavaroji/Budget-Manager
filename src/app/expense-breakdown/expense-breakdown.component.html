@@ -26,35 +26,70 @@
       </div>
     </div>
 
-    <!-- Category Pills Quick Filter Bar -->
-    <div *ngIf="categories.length > 0" class="category-pills-container">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <span class="eyebrow mb-0">FILTER BY CATEGORY</span>
-        <button *ngIf="selectedCategoryFilter !== 'all'" class="btn btn-sm btn-link text-decoration-none p-0 filter-reset-btn" (click)="selectCategoryFilterPill('all')">Show all</button>
+      <!-- Category Pills Quick Filter Bar -->
+      <div *ngIf="categories.length > 0" class="category-pills-container mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="eyebrow mb-0">FILTER BY CATEGORY</span>
+          <button *ngIf="selectedCategoryFilter !== 'all'" class="btn btn-sm btn-link text-decoration-none p-0 filter-reset-btn" (click)="selectCategoryFilterPill('all')">Show all</button>
+        </div>
+        <div class="category-pills">
+          <button
+            class="category-pill"
+            [class.category-pill-active]="selectedCategoryFilter === 'all'"
+            type="button"
+            (click)="selectCategoryFilterPill('all')"
+          >
+            <span class="pill-icon">✨</span>
+            <span class="pill-label">All</span>
+          </button>
+          <button
+            *ngFor="let categoryName of availableCategoryNames()"
+            class="category-pill"
+            [class.category-pill-active]="selectedCategoryFilter === categoryName"
+            type="button"
+            (click)="selectCategoryFilterPill(categoryName)"
+          >
+            <span class="pill-icon">{{ categoryIcon(categoryName) }}</span>
+            <span class="pill-label">{{ categoryName }}</span>
+          </button>
+        </div>
       </div>
-      <div class="category-pills">
-        <button
-          class="category-pill"
-          [class.category-pill-active]="selectedCategoryFilter === 'all'"
-          type="button"
-          (click)="selectCategoryFilterPill('all')"
-        >
-          <span class="pill-icon">✨</span>
-          <span class="pill-label">All</span>
-        </button>
-        <button
-          *ngFor="let categoryName of availableCategoryNames()"
-          class="category-pill"
-          [class.category-pill-active]="selectedCategoryFilter === categoryName"
-          type="button"
-          (click)="selectCategoryFilterPill(categoryName)"
-        >
-          <span class="pill-icon">{{ categoryIcon(categoryName) }}</span>
-          <span class="pill-label">{{ categoryName }}</span>
-        </button>
+
+      <!-- Advanced Filters -->
+      <div class="statement-filters mb-4" aria-label="Filter transactions">
+        <div class="filter-heading">
+          <span class="eyebrow">ADVANCED FILTERS</span>
+          <button class="btn btn-sm btn-link" type="button" (click)="resetFilters()">Reset filters</button>
+        </div>
+        <div class="row g-2">
+          <div class="col-12 col-md-4">
+            <label class="form-label" for="eb-transaction-type">Type</label>
+            <select id="eb-transaction-type" class="form-select form-select-sm" [value]="transactionType" (change)="updateTransactionType($event)">
+              <option value="all">All transactions</option>
+              <option value="debit">Debits only</option>
+              <option value="credit">Credits only</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="form-label" for="eb-minimum-amount">Min amount</label>
+            <input id="eb-minimum-amount" class="form-control form-control-sm" type="number" min="0" placeholder="0" [value]="minimumAmount ?? ''" (input)="updateNumberFilter('minimumAmount', $event)">
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="form-label" for="eb-maximum-amount">Max amount</label>
+            <input id="eb-maximum-amount" class="form-control form-control-sm" type="number" min="0" placeholder="No limit" [value]="maximumAmount ?? ''" (input)="updateNumberFilter('maximumAmount', $event)">
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="form-label" for="eb-minimum-balance">Min balance</label>
+            <input id="eb-minimum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="0" [value]="minimumBalance ?? ''" (input)="updateNumberFilter('minimumBalance', $event)">
+          </div>
+          <div class="col-6 col-md-2">
+            <label class="form-label" for="eb-maximum-balance">Max balance</label>
+            <input id="eb-maximum-balance" class="form-control form-control-sm" type="number" min="0" placeholder="No limit" [value]="maximumBalance ?? ''" (input)="updateNumberFilter('maximumBalance', $event)">
+          </div>
+        </div>
+        <p class="filter-result mb-0 mt-2">Showing {{ filteredTransactions().length }} of {{ allScopedTransactions().length }} transactions</p>
       </div>
     </div>
-  </div>
 
   <div *ngIf="filteredDisplayedCategories().length > 0; else emptyState" class="row g-3">
     <div *ngFor="let category of filteredDisplayedCategories()" class="col-12 col-md-6">
@@ -111,15 +146,60 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let transaction of selectedCategoryTransactions()">
+          <tr *ngFor="let transaction of paginatedCategoryTransactions()">
             <td *ngIf="!selectedMonth" class="text-secondary text-nowrap">{{ transaction.monthLabel }}</td>
             <td class="text-secondary text-nowrap">{{ transaction.date }}</td>
             <td class="transaction-description">{{ transaction.description }}</td>
-            <td class="debit-amount text-end text-nowrap">-{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}</td>
+            <td class="text-end text-nowrap" [class.credit-amount]="transaction.type === 'credit'" [class.debit-amount]="transaction.type === 'debit'">
+              {{ transaction.type === 'credit' ? '+' : '-' }}{{ transaction.amount | currency:'INR':'symbol-narrow':'1.2-2' }}
+            </td>
             <td class="text-secondary text-end text-nowrap">{{ transaction.closingBalance === null ? '—' : (transaction.closingBalance | currency:'INR':'symbol-narrow':'1.2-2') }}</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Category Detail Pagination Controls Bar -->
+    <div *ngIf="selectedCategoryTransactions().length > 0" class="pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 mt-3 pt-3">
+      <div class="d-flex align-items-center gap-2 text-secondary small">
+        <span>Show</span>
+        <select class="form-select form-select-sm page-size-select" [value]="categoryPageSize" (change)="changeCategoryPageSize($event)">
+          <option *ngFor="let size of categoryPageSizeOptions" [value]="size">{{ size }}</option>
+        </select>
+        <span>per page</span>
+        <span class="mx-2 text-muted">|</span>
+        <span class="fw-semibold text-dark">Showing {{ categoryStartIndex() }}–{{ categoryEndIndex() }} of {{ selectedCategoryTransactions().length }}</span>
+      </div>
+
+      <nav aria-label="Category transaction pagination" *ngIf="categoryTotalPages() > 1">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="categoryCurrentPage === 1">
+            <button class="page-link" type="button" (click)="firstCategoryPage()" [disabled]="categoryCurrentPage === 1" title="First page" aria-label="First page">
+              ⏮
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="categoryCurrentPage === 1">
+            <button class="page-link" type="button" (click)="previousCategoryPage()" [disabled]="categoryCurrentPage === 1" title="Previous page" aria-label="Previous page">
+              ◀
+            </button>
+          </li>
+          <li *ngFor="let page of categoryPageNumbers()" class="page-item" [class.active]="categoryCurrentPage === page">
+            <button class="page-link" type="button" (click)="goToCategoryPage(page)">
+              {{ page }}
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="categoryCurrentPage === categoryTotalPages()">
+            <button class="page-link" type="button" (click)="nextCategoryPage()" [disabled]="categoryCurrentPage === categoryTotalPages()" title="Next page" aria-label="Next page">
+              ▶
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="categoryCurrentPage === categoryTotalPages()">
+            <button class="page-link" type="button" (click)="lastCategoryPage()" [disabled]="categoryCurrentPage === categoryTotalPages()" title="Last page" aria-label="Last page">
+              ⏭
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
   </section>
     </section>
