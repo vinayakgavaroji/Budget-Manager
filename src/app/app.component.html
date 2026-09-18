@@ -25,8 +25,52 @@
     </div>
   </nav>
 
+  <!-- Breadcrumb / Back-Forward Bar -->
+  <div class="breadcrumb-bar" *ngIf="breadcrumb().length > 1" aria-label="Page navigation">
+    <div class="container breadcrumb-inner">
+
+      <!-- Back / Forward arrows -->
+      <div class="nav-arrows">
+        <button
+          class="nav-arrow-btn"
+          type="button"
+          (click)="navigateBack()"
+          [disabled]="!canGoBack()"
+          aria-label="Go back"
+          title="Go back"
+        >
+          ‹
+        </button>
+        <button
+          class="nav-arrow-btn"
+          type="button"
+          (click)="navigateForward()"
+          [disabled]="!canGoForward()"
+          aria-label="Go forward"
+          title="Go forward"
+        >
+          ›
+        </button>
+      </div>
+
+      <!-- Breadcrumb trail -->
+      <ol class="breadcrumb mb-0" aria-label="Breadcrumb">
+        <li
+          *ngFor="let crumb of breadcrumb(); let last = last"
+          class="breadcrumb-item"
+          [class.active]="last"
+        >
+          <a *ngIf="!last" class="breadcrumb-link" [routerLink]="crumb.url">{{ crumb.label }}</a>
+          <span *ngIf="last" class="breadcrumb-current">{{ crumb.label }}</span>
+        </li>
+      </ol>
+
+    </div>
+  </div>
+
   <router-outlet />
 </ng-container>
+
 
 <ng-template #publicShell>
   <router-outlet />

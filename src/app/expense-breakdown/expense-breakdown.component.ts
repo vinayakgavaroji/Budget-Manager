@@ -72,6 +72,10 @@ export class ExpenseBreakdownComponent implements OnInit {
   categoryPageSize = 10;
   categoryPageSizeOptions: number[] = [5, 10, 20, 50, 100];
 
+  txCurrentPage = 1;
+  txPageSize = 10;
+  txPageSizeOptions: number[] = [5, 10, 20, 50, 100];
+
   reset() {
     this.selectedMonth = null;
     this.selectedCategoryName = null;
@@ -82,17 +86,20 @@ export class ExpenseBreakdownComponent implements OnInit {
     this.minimumBalance = null;
     this.maximumBalance = null;
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
   }
 
   updateNumberFilter(field: 'minimumAmount' | 'maximumAmount' | 'minimumBalance' | 'maximumBalance', event: Event) {
     const value = (event.target as HTMLInputElement).value;
     this[field] = value === '' ? null : Number(value);
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
   }
 
   updateTransactionType(event: Event) {
     this.transactionType = (event.target as HTMLSelectElement).value as 'all' | 'debit' | 'credit';
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
   }
 
   resetFilters() {
@@ -103,6 +110,53 @@ export class ExpenseBreakdownComponent implements OnInit {
     this.minimumBalance = null;
     this.maximumBalance = null;
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
+  }
+
+  // ── Flat all-transactions pagination ──
+  paginatedAllTransactions() {
+    const all = this.filteredTransactions();
+    const start = (this.txCurrentPage - 1) * this.txPageSize;
+    return all.slice(start, start + this.txPageSize);
+  }
+
+  txTotalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredTransactions().length / this.txPageSize));
+  }
+
+  txStartIndex(): number {
+    const total = this.filteredTransactions().length;
+    if (total === 0) return 0;
+    return (this.txCurrentPage - 1) * this.txPageSize + 1;
+  }
+
+  txEndIndex(): number {
+    return Math.min(this.txCurrentPage * this.txPageSize, this.filteredTransactions().length);
+  }
+
+  goToTxPage(page: number) {
+    if (page >= 1 && page <= this.txTotalPages()) this.txCurrentPage = page;
+  }
+
+  nextTxPage() { if (this.txCurrentPage < this.txTotalPages()) this.txCurrentPage++; }
+  previousTxPage() { if (this.txCurrentPage > 1) this.txCurrentPage--; }
+  firstTxPage() { this.txCurrentPage = 1; }
+  lastTxPage() { this.txCurrentPage = this.txTotalPages(); }
+
+  changeTxPageSize(event: Event) {
+    this.txPageSize = Number((event.target as HTMLSelectElement).value);
+    this.txCurrentPage = 1;
+  }
+
+  txPageNumbers(): number[] {
+    const total = this.txTotalPages();
+    const current = this.txCurrentPage;
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, start + 4);
+    if (end - start < 4) start = Math.max(1, end - 4);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
   }
 
   isAdvancedFiltersActive(): boolean {
@@ -146,6 +200,10 @@ export class ExpenseBreakdownComponent implements OnInit {
     return [...categoryMap.values()];
   }
 
+  totalFilteredAmount(): number {
+    return this.filteredTransactions().reduce((total, t) => total + t.amount, 0);
+  }
+
   availableCategoryNames(): string[] {
     const categories = this.displayedCategories();
     return categories.map((cat) => cat.name).sort();
@@ -187,6 +245,7 @@ export class ExpenseBreakdownComponent implements OnInit {
   selectMonth(month: ExpenseBreakdownMonth) {
     this.selectedMonth = month;
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
     this.monthSelected.emit(month);
   }
 
@@ -195,6 +254,13 @@ export class ExpenseBreakdownComponent implements OnInit {
     this.selectedCategoryName = null;
     this.selectedCategoryFilter = 'all';
     this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
+  }
+
+  selectCategoryFromTable(categoryName: string) {
+    this.selectedCategoryFilter = categoryName;
+    this.categoryCurrentPage = 1;
+    this.txCurrentPage = 1;
   }
 
   selectCategory(categoryName: string) {
